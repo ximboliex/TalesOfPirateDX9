@@ -18,6 +18,13 @@ MWFH = 25
 MWJW = 26
 MWLH = 27
 MWHS = 28
+
+-- Advanced AI types (50+)
+AI_PATROL_ADV   = 50   -- Advanced multi-waypoint patrol
+AI_SMART_ATK    = 51   -- Smart attacker (prioritizes healers/low HP)
+AI_THIEF        = 52   -- Thief/Goblin (steals ground loot)
+AI_GUARDIAN     = 53   -- Guardian (protects area, calls allies)
+AI_AMBUSHER     = 54   -- Ambusher (waits, surprise attacks)
 MWHDS = 29
 MHKL = 30
 

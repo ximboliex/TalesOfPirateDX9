@@ -36,7 +36,7 @@ extern std::list<std::string> g_luaFNList;
 } 
 
 
-//--------------------------°ïÖúNPCµÄ¶¨Òå-----------------------------
+//--------------------------ï¿½ï¿½ï¿½ï¿½NPCï¿½Ä¶ï¿½ï¿½ï¿½-----------------------------
 struct SHelpNPC
 {
 	char		szName[32];
@@ -58,7 +58,7 @@ void  AddHelpNPC(CCharacter *pNPC);
 
 
 
-// Ê¹ÓÃlua pcallµÄ´íÎó±¨¸æº¯Êý
+// Ê¹ï¿½ï¿½lua pcallï¿½Ä´ï¿½ï¿½ó±¨¸æº¯ï¿½ï¿½
 inline void lua_callalert(lua_State* L, int status)
 {T_B
 	if (status != 0)
@@ -93,7 +93,7 @@ inline int lua_EnableAI(lua_State *L)
 	return 0;
 T_E}
 
-// ÉèÖÃµ±Ç°µØÍ¼
+// ï¿½ï¿½ï¿½Ãµï¿½Ç°ï¿½ï¿½Í¼
 inline int lua_SetCurMap(lua_State *L)
 {T_B
 	BOOL bValid = (lua_gettop(L)==1 && lua_isstring(L, 1));
@@ -107,7 +107,7 @@ inline int lua_SetCurMap(lua_State *L)
 	CMapRes *pMap = g_pGameApp->FindMapByName(pszName);
 	if(pMap==NULL)
 	{
-		//LG("lua_ai", "Ã»ÓÐÕÒµ½Ö¸¶¨µØÍ¼[%s], Î¬³ÖÔ­µØÍ¼!\n", pszName);
+		//LG("lua_ai", "Ã»ï¿½ï¿½ï¿½Òµï¿½Ö¸ï¿½ï¿½ï¿½ï¿½Í¼[%s], Î¬ï¿½ï¿½Ô­ï¿½ï¿½Í¼!\n", pszName);
 		LG("lua_ai", "can't find pointer map[%s], keep former map!\n", pszName);
 		lua_pushnumber(L, 0);
 		return 1;
@@ -160,19 +160,19 @@ inline int lua_CreateChaNearPlayer(lua_State *L){T_B CHECK_MAP
 		lua_pushlightuserdata(L, pCCha);
 		return 1;
 	}else{
-		//LG("lua_ai", "´´½¨½ÇÉ«Ê§°Ü\n");
+		//LG("lua_ai", "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É«Ê§ï¿½ï¿½\n");
 		LG("lua_ai", "create character near role failed\n");
 		return 0;
 	}
 T_E}
 
 
-// ÔÚÖ¸¶¨×ø±ê´´½¨½ÇÉ«
+// ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ê´´ï¿½ï¿½ï¿½ï¿½É«
 inline int lua_CreateCha(lua_State *L)
 {T_B
 	CHECK_MAP
 
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==5 && lua_isnumber(L, 1) && lua_isnumber (L, 2) && 
 	              lua_isnumber (L, 3) && lua_isnumber (L, 4) && lua_isnumber(L, 5));
     if(!bValid) 
@@ -183,12 +183,12 @@ inline int lua_CreateCha(lua_State *L)
     
     int		nScriptID = (int)lua_tonumber(L, 1);
 	Point	Pos;
-    Pos.x = (int)lua_tonumber(L, 2);               // ÀåÃ××ø±ê
+    Pos.x = (int)lua_tonumber(L, 2);               // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	Pos.y = (int)lua_tonumber(L, 3);
-	short sAngle = (short)lua_tonumber(L, 4);      // ½ÇÉ«³öÉú·½Ïò
-	long  lReliveTime = (int)lua_tonumber(L, 5);   // ËÀÍöºóµÄÖØÉúÊ±¼ä
+	short sAngle = (short)lua_tonumber(L, 4);      // ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	long  lReliveTime = (int)lua_tonumber(L, 5);   // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
 
-	//LG("create_cha", "´´½¨¹ÖÎï%d  pos = %d %d, angle = %d, rTime = %d\n", nScriptID, Pos.x, Pos.y, sAngle, lReliveTime);
+	//LG("create_cha", "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½%d  pos = %d %d, angle = %d, rTime = %d\n", nScriptID, Pos.x, Pos.y, sAngle, lReliveTime);
 	LG("create_cha", "create bugbear%d  pos = %d %d, angle = %d, rTime = %d\n", nScriptID, Pos.x, Pos.y, sAngle, lReliveTime);
     
 	AddMonsterHelp(nScriptID, Pos.x, Pos.y);
@@ -202,7 +202,7 @@ inline int lua_CreateCha(lua_State *L)
 	}
 	else
 	{
-		//LG("lua_ai", "´´½¨½ÇÉ«Ê§°Ü\n");
+		//LG("lua_ai", "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É«Ê§ï¿½ï¿½\n");
 		LG("lua_ai", "create character failed\n");
 		return 0;
 	}
@@ -210,7 +210,7 @@ T_E}
 
 inline int lua_CreateChaX(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
 	BOOL bValid = (lua_gettop (L)==6 && lua_isnumber(L, 1) && lua_isnumber (L, 2)
 				&& lua_isnumber (L, 3) && lua_isnumber (L, 4) && lua_isnumber(L, 5)
 				&& lua_islightuserdata(L, 6));
@@ -222,13 +222,13 @@ inline int lua_CreateChaX(lua_State *L)
 
 	int		nScriptID = (int)lua_tonumber(L, 1);
 	Point	Pos;
-	Pos.x = (int)lua_tonumber(L, 2);               // ÀåÃ××ø±ê
+	Pos.x = (int)lua_tonumber(L, 2);               // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	Pos.y = (int)lua_tonumber(L, 3);
-	short sAngle = (short)lua_tonumber(L, 4);      // ½ÇÉ«³öÉú·½Ïò
-	long  lReliveTime = (int)lua_tonumber(L, 5);   // ËÀÍöºóµÄÖØÉúÊ±¼ä
+	short sAngle = (short)lua_tonumber(L, 4);      // ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	long  lReliveTime = (int)lua_tonumber(L, 5);   // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
 	CCharacter *pMainCha = (CCharacter *)lua_touserdata(L, 6);
 
-	//LG("create_chaX", "´´½¨¹ÖÎï%d  pos = %d %d, angle = %d, rTime = %d\n", nScriptID, Pos.x, Pos.y, sAngle, lReliveTime);
+	//LG("create_chaX", "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½%d  pos = %d %d, angle = %d, rTime = %d\n", nScriptID, Pos.x, Pos.y, sAngle, lReliveTime);
 	LG("create_chaX", "create bugbear%d  pos = %d %d, angle = %d, rTime = %d\n", nScriptID, Pos.x, Pos.y, sAngle, lReliveTime);
 
 	AddMonsterHelp(nScriptID, Pos.x, Pos.y);
@@ -242,7 +242,7 @@ inline int lua_CreateChaX(lua_State *L)
 	}
 	else
 	{
-		//LG("lua_ai", "´´½¨½ÇÉ«Ê§°Ü\n");
+		//LG("lua_ai", "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É«Ê§ï¿½ï¿½\n");
 		LG("lua_ai", "create character failed\n");
 		return 0;
 	}
@@ -250,10 +250,10 @@ T_E}
 
 inline int lua_CreateChaEx(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
 	CHECK_MAP
 
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
 	BOOL bValid = (lua_gettop (L)==6 && lua_isnumber(L, 1) && lua_isnumber (L, 2) && 
 	lua_isnumber (L, 3) && lua_isnumber (L, 4) && lua_isnumber(L, 5) && lua_islightuserdata(L,6));
 	if(!bValid) 
@@ -264,17 +264,17 @@ inline int lua_CreateChaEx(lua_State *L)
 
 	int		nScriptID = (int)lua_tonumber(L, 1);
 	Point	Pos;
-	Pos.x = (int)lua_tonumber(L, 2);               // ÀåÃ××ø±ê
+	Pos.x = (int)lua_tonumber(L, 2);               // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	Pos.y = (int)lua_tonumber(L, 3);
-	short sAngle = (short)lua_tonumber(L, 4);      // ½ÇÉ«³öÉú·½Ïò
-	long  lReliveTime = (int)lua_tonumber(L, 5);   // ËÀÍöºóµÄÖØÉúÊ±¼ä
+	short sAngle = (short)lua_tonumber(L, 4);      // ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	long  lReliveTime = (int)lua_tonumber(L, 5);   // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
 	SubMap * pMap = (SubMap *)lua_touserdata(L,6);
 	if(!pMap)
 	{
 		E_LUANULL
 		return 0;
 	}
-	//LG("create_chaex", "´´½¨¹ÖÎï%d  pos = %d %d, angle = %d, rTime = %d\n", nScriptID, Pos.x, Pos.y, sAngle, lReliveTime);
+	//LG("create_chaex", "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½%d  pos = %d %d, angle = %d, rTime = %d\n", nScriptID, Pos.x, Pos.y, sAngle, lReliveTime);
 	LG("create_chaex", "create bugbear%d  pos = %d %d, angle = %d, rTime = %d\n", nScriptID, Pos.x, Pos.y, sAngle, lReliveTime);
 
 	AddMonsterHelp(nScriptID, Pos.x, Pos.y);
@@ -288,16 +288,16 @@ inline int lua_CreateChaEx(lua_State *L)
 	}
 	else
 	{
-		//LG("lua_ai", "´´½¨½ÇÉ«Ê§°Ü\n");
+		//LG("lua_ai", "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É«Ê§ï¿½ï¿½\n");
 		LG("lua_ai", "create character failed\n");
 		return 0;
 	}
 T_E}
 
-// ½ÇÉ«Ç°ÍùÖ¸¶¨×ø±ê
+// ï¿½ï¿½É«Ç°ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline int lua_ChaMove(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==3 && lua_islightuserdata(L, 1) && lua_isnumber (L, 2) &&  lua_isnumber (L, 3));
     if(!bValid) 
     {
@@ -323,10 +323,10 @@ inline int lua_ChaMove(lua_State *L)
 	return 0;
 T_E}
 
-// ½ÇÉ«Ç°ÍùÖ¸¶¨×ø±ê£¬µ½´ïºóÐÝÃß
+// ï¿½ï¿½É«Ç°ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ê£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline int lua_ChaMoveToSleep(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==3 && lua_islightuserdata(L, 1) && lua_isnumber (L, 2) &&  lua_isnumber (L, 3));
     if(!bValid) 
     {
@@ -337,7 +337,7 @@ inline int lua_ChaMoveToSleep(lua_State *L)
 	CCharacter *pCCha = (CCharacter*)lua_touserdata(L, 1);
 	if (pCCha)
     {
-		// char szInfo[255]; sprintf(szInfo, "%s»ØÈ¥ÐÝÃß,ChaMoveToSleep\n", pCCha->GetName());
+		// char szInfo[255]; sprintf(szInfo, "%sï¿½ï¿½È¥ï¿½ï¿½ï¿½ï¿½,ChaMoveToSleep\n", pCCha->GetName());
 		// g_pGameApp->WorldNotice(szInfo);
 		int x = (int)lua_tonumber(L, 2);
 		int y = (int)lua_tonumber(L, 3);
@@ -356,10 +356,10 @@ inline int lua_ChaMoveToSleep(lua_State *L)
 	return 0;
 T_E}
 
-// »ñµÃ½ÇÉ«³öÉúµã
+// ï¿½ï¿½Ã½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline int lua_GetChaSpawnPos(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -380,10 +380,10 @@ inline int lua_GetChaSpawnPos(lua_State *L)
 T_E}
 
 
-// È¡µÃ½ÇÉ«µÄÑ²Âßµã
+// È¡ï¿½Ã½ï¿½É«ï¿½ï¿½Ñ²ï¿½ßµï¿½
 inline int lua_GetChaPatrolPos(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -403,10 +403,10 @@ inline int lua_GetChaPatrolPos(lua_State *L)
 	return 0;
 T_E}
 
-// ÉèÖÃÖ¸¶¨½ÇÉ«µÄÑ²Âß×´Ì¬, ÓÃÓÚAI¿ØÖÆ
+// ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½Ñ²ï¿½ï¿½×´Ì¬, ï¿½ï¿½ï¿½ï¿½AIï¿½ï¿½ï¿½ï¿½
 inline int lua_SetChaPatrolState(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==2 && lua_islightuserdata(L, 1) && lua_isnumber(L,2));
 	if(!bValid) 
     {
@@ -421,10 +421,10 @@ inline int lua_SetChaPatrolState(lua_State *L)
 	return 0;
 T_E}
 
-// ·µ»ØÖ¸¶¨½ÇÉ«µÄÑ²Âß×´Ì¬, ÓÃÓÚAI¿ØÖÆ
+// ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½Ñ²ï¿½ï¿½×´Ì¬, ï¿½ï¿½ï¿½ï¿½AIï¿½ï¿½ï¿½ï¿½
 inline int lua_GetChaPatrolState(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -439,12 +439,12 @@ T_E}
 
 
 
-// ½ÇÉ«¶ÔÄ¿±êÊ¹ÓÃ¼¼ÄÜ
-// ²ÎÊý£º½ÇÉ«¶ÔÏó£¬Ä¿±ê¶ÔÏó£¬¼¼ÄÜ±àºÅ£¨Èç¹û¸Ã¼¼ÄÜÊÇ×÷ÓÃÓÚÄ¿±êµã£¬ÔòÄ¿±êµãÈ¡Ä¿±ê½ÇÉ«¶ÔÏóµÄµ±Ç°Î»ÖÃ£©£¬[ÊÇ·ñÁ¢¼´Ö´ÐÐ]
-// ·µ»ØÖµ£ºÎÞ
+// ï¿½ï¿½É«ï¿½ï¿½Ä¿ï¿½ï¿½Ê¹ï¿½Ã¼ï¿½ï¿½ï¿½
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ó£¬¼ï¿½ï¿½Ü±ï¿½Å£ï¿½ï¿½ï¿½ï¿½ï¿½Ã¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½ã£¬ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½È¡Ä¿ï¿½ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½Äµï¿½Ç°Î»ï¿½Ã£ï¿½ï¿½ï¿½[ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ï¿½]
+// ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½
 inline int lua_ChaUseSkill(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_islightuserdata(L, 1) && lua_islightuserdata (L, 2) &&  lua_isnumber (L, 3));
     if(!bValid) 
     {
@@ -458,7 +458,7 @@ inline int lua_ChaUseSkill(lua_State *L)
         return 0;
     }
 	bool	bExecNow = false;
-	if (nParamNum == 4 && ((int)lua_tonumber(L, 4) != 0)) // Á¢¼´Ö´ÐÐ
+	if (nParamNum == 4 && ((int)lua_tonumber(L, 4) != 0)) // ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ï¿½
 		bExecNow = true;
 
 	CCharacter *pCha    = (CCharacter*)lua_touserdata(L, 1);
@@ -481,12 +481,12 @@ inline int lua_ChaUseSkill(lua_State *L)
 	return 0;
 T_E}
 
-// ½ÇÉ«Ê¹ÓÃ¼¼ÄÜ
-// ²ÎÊý£º½ÇÉ«¶ÔÏó£¬¼¼ÄÜ±àºÅ£¬¼¼ÄÜµÈ¼¶£¬Ä¿±êÎ»ÖÃ[x,y]£¬[ÊÇ·ñÁ¢¼´Ö´ÐÐ]
-// ·µ»ØÖµ£ºÎÞ
+// ï¿½ï¿½É«Ê¹ï¿½Ã¼ï¿½ï¿½ï¿½
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½ï¿½ó£¬¼ï¿½ï¿½Ü±ï¿½Å£ï¿½ï¿½ï¿½ï¿½ÜµÈ¼ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½Î»ï¿½ï¿½[x,y]ï¿½ï¿½[ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ï¿½]
+// ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½
 inline int lua_ChaUseSkill2(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_islightuserdata(L, 1) && lua_isnumber (L, 2) &&  lua_isnumber (L, 3) &&  lua_isnumber (L, 4) &&  lua_isnumber (L, 5));
     if(!bValid) 
     {
@@ -500,7 +500,7 @@ inline int lua_ChaUseSkill2(lua_State *L)
         return 0;
     }
 	bool	bExecNow = false;
-	if (nParamNum == 6 && ((int)lua_tonumber(L, 6) != 0)) // Á¢¼´Ö´ÐÐ
+	if (nParamNum == 6 && ((int)lua_tonumber(L, 6) != 0)) // ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ï¿½
 		bExecNow = true;
 
 	CCharacter *pCha    = (CCharacter*)lua_touserdata(L, 1);
@@ -527,10 +527,10 @@ inline int lua_ChaUseSkill2(lua_State *L)
 	return 0;
 T_E}
 
-// ·µ»ØÖ¸¶¨½ÇÉ«µÄÊôÐÔ
+// ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline int lua_QueryChaAttr(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==2 && lua_islightuserdata(L, 1) && lua_isnumber(L, 2));
 	if(!bValid) 
     {
@@ -550,10 +550,10 @@ inline int lua_QueryChaAttr(lua_State *L)
 	return 1;
 T_E}
 
-// ·µ»ØÖ¸¶¨½ÇÉ«µÄÀàÐÍID
+// ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ID
 inline int lua_GetChaType(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -570,10 +570,10 @@ inline int lua_GetChaType(lua_State *L)
 	return 1;
 T_E}
 
-// ·µ»ØÖ¸¶¨½ÇÉ«µÄ×è°­´ÎÊý, ÓÃÓÚAIÅÐ¶Ï
+// ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½ï¿½è°­ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½AIï¿½Ð¶ï¿½
 inline int lua_GetChaBlockCnt(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -590,10 +590,10 @@ inline int lua_GetChaBlockCnt(lua_State *L)
 	return 1;
 T_E}
 
-// ÉèÖÃÖ¸¶¨½ÇÉ«µÄ×è°­´ÎÊý, ÓÃÓÚAI¿ØÖÆ
+// ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½ï¿½è°­ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½AIï¿½ï¿½ï¿½ï¿½
 inline int lua_SetChaBlockCnt(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==2 && lua_islightuserdata(L, 1) && lua_isnumber(L,2));
 	if(!bValid) 
     {
@@ -608,10 +608,10 @@ inline int lua_SetChaBlockCnt(lua_State *L)
 	return 0;
 T_E}
 
-// ·µ»ØÖ¸¶¨½ÇÉ«µÄAIÀàÐÍ
+// ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½AIï¿½ï¿½ï¿½ï¿½
 inline int lua_GetChaAIType(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -628,10 +628,10 @@ inline int lua_GetChaAIType(lua_State *L)
 	return 1;
 T_E}
 
-// ·µ»ØÖ¸¶¨½ÇÉ«µÄ×·×Ù·¶Î§
+// ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½×·ï¿½Ù·ï¿½Î§
 inline int lua_GetChaChaseRange(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -648,10 +648,10 @@ inline int lua_GetChaChaseRange(lua_State *L)
 	return 1;
 T_E}
 
-// ÉèÖÃÖ¸¶¨½ÇÉ«µÄ×·×Ù·¶Î§
+// ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½×·ï¿½Ù·ï¿½Î§
 inline int lua_SetChaChaseRange(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==2 && lua_islightuserdata(L, 1) && lua_isnumber(L, 2));
 	if(!bValid) 
     {
@@ -668,10 +668,10 @@ inline int lua_SetChaChaseRange(lua_State *L)
 T_E}
 
 
-// Éè¶¨Ö¸¶¨½ÇÉ«µÄAIÀàÐÍ
+// ï¿½è¶¨Ö¸ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½AIï¿½ï¿½ï¿½ï¿½
 inline int lua_SetChaAIType(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==2 && lua_islightuserdata(L, 1) && lua_isnumber(L,2));
 	if(!bValid) 
     {
@@ -684,18 +684,18 @@ inline int lua_SetChaAIType(lua_State *L)
     {
 		int nType = (int)lua_tonumber(L, 2);
 		pCha->m_AIType = nType;
-		//LG("lua_ai", "½ÇÉ«[%s]±»ÉèÖÃaiÀàÐÍÎª%d\n", pCha->GetName(), nType);
+		//LG("lua_ai", "ï¿½ï¿½É«[%s]ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½aiï¿½ï¿½ï¿½ï¿½Îª%d\n", pCha->GetName(), nType);
 		LG("lua_ai", "character[%s]be set ai type is%d\n", pCha->GetName(), nType);
     }
 
 	return 0;
 T_E}
 
-// ²ÎÊý£º½ÇÉ«¶ÔÏó
-// È¡µÃ½ÇÉ«µÄÀàÐÍ
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½
+// È¡ï¿½Ã½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline int lua_GetChaTypeID(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -716,10 +716,10 @@ inline int lua_GetChaTypeID(lua_State *L)
 		return 0;
 T_E}
 
-// È¡µÃ½ÇÉ«µÄÊÓÒ°·¶Î§(Ë÷µÐ·¶Î§)
+// È¡ï¿½Ã½ï¿½É«ï¿½ï¿½ï¿½ï¿½Ò°ï¿½ï¿½Î§(ï¿½ï¿½ï¿½Ð·ï¿½Î§)
 inline int lua_GetChaVision(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -735,10 +735,10 @@ inline int lua_GetChaVision(lua_State *L)
 	return 1;
 T_E}
 
-// È¡³ö½ÇÉ«ÌìÉúËù»áµÄ¼¼ÄÜÊýÁ¿, ÓÃÓÚ¹ÖÎïAI
+// È¡ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½Ú¹ï¿½ï¿½ï¿½AI
 inline int lua_GetChaSkillNum(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -755,10 +755,10 @@ inline int lua_GetChaSkillNum(lua_State *L)
 	return 0;
 }
 
-// Ö¸¶¨±í¸ñÎ»ÖÃ»ñµÃ½ÇÉ«¼¼ÄÜIDºÍ¸Ã¼¼ÄÜµÄÊ¹ÓÃÆµÂÊ
+// Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½Ã»ï¿½Ã½ï¿½É«ï¿½ï¿½ï¿½ï¿½IDï¿½Í¸Ã¼ï¿½ï¿½Üµï¿½Ê¹ï¿½ï¿½Æµï¿½ï¿½
 inline int lua_GetChaSkillInfo(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==2 && lua_islightuserdata(L, 1) && lua_isnumber(L, 2));
 	if(!bValid) 
     {
@@ -778,10 +778,10 @@ inline int lua_GetChaSkillInfo(lua_State *L)
 }
 
 
-// Ö¸¶¨½ÇÉ«µÄµ±Ç°Ä¿±ê
+// Ö¸ï¿½ï¿½ï¿½ï¿½É«ï¿½Äµï¿½Ç°Ä¿ï¿½ï¿½
 inline int lua_SetChaTarget(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð, target¿ÉÒÔÎª0, ËùÒÔ²»×ö²ÎÊý¼ì²é
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½, targetï¿½ï¿½ï¿½ï¿½Îª0, ï¿½ï¿½ï¿½Ô²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     BOOL bValid = (lua_gettop (L)==2 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -822,10 +822,10 @@ inline int lua_SetChaTarget(lua_State *L)
 	return 0;
 T_E}
 
-// ·µ»ØÖ¸¶¨½ÇÉ«µÄµ±Ç°Ä¿±ê
+// ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½É«ï¿½Äµï¿½Ç°Ä¿ï¿½ï¿½
 inline int lua_GetChaTarget(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -842,10 +842,10 @@ inline int lua_GetChaTarget(lua_State *L)
 	return 0;
 T_E}
 
-// ·µ»ØÖ¸¶¨½ÇÉ«µÄÖ÷ÈË
+// ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline int lua_GetChaHost(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -862,10 +862,10 @@ inline int lua_GetChaHost(lua_State *L)
 	return 0;
 T_E}
 
-// Ö¸¶¨½ÇÉ«µÄÖ÷ÈË
+// Ö¸ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline int lua_SetChaHost(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==2 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -898,7 +898,7 @@ T_E}
 
 inline int lua_GetPetNum(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
 	BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
 	{
@@ -920,10 +920,10 @@ inline int lua_GetPetNum(lua_State *L)
 	return 1;
 T_E}
 
-// È¡µÃ¶Ô½ÇÉ«ÉËº¦×î´óµÄÄ¿±ê
+// È¡ï¿½Ã¶Ô½ï¿½É«ï¿½Ëºï¿½ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½
 inline int lua_GetChaFirstTarget(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -938,17 +938,17 @@ inline int lua_GetChaFirstTarget(lua_State *L)
 		if(pTarget)
 		{
 			lua_pushlightuserdata(L, pTarget);
-			// LG("lua_ai", "·µ»ØµÚÒ»¸öÓÐÐ§Ä¿±ê[%s]\n", pTarget->GetName());
+			// LG("lua_ai", "ï¿½ï¿½ï¿½Øµï¿½Ò»ï¿½ï¿½ï¿½ï¿½Ð§Ä¿ï¿½ï¿½[%s]\n", pTarget->GetName());
 			return 1;
 		}
 	}
 	return 0;
 }
 
-// È¡µÃÄ¿±êÁÐ±íÀïµÄµÚÒ»¸ö¹¥»÷Õß
+// È¡ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½Ð±ï¿½ï¿½ï¿½Äµï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline int lua_GetFirstAtker(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -985,10 +985,10 @@ inline int lua_GetFirstAtker(lua_State *L)
 	return 0;
 }
 
-// È¡µÃÄ¿±êÁÐ±íÀïµÄÖ¸¶¨Ä¿±êÔì³ÉµÄÉËº¦Öµ, ÓÃÓÚ¾ö¶¨¾­Ñé·ÖÅä
+// È¡ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½Ð±ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½Éµï¿½ï¿½Ëºï¿½Öµ, ï¿½ï¿½ï¿½Ú¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline int lua_GetChaHarmByNo(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==2 && lua_islightuserdata(L, 1) && lua_isnumber(L, 2));
 	if(!bValid) 
     {
@@ -999,7 +999,7 @@ inline int lua_GetChaHarmByNo(lua_State *L)
 	CCharacter *pCha = (CCharacter*)lua_touserdata(L, 1);
 	if(pCha)
 	{
-		// LG("harm", "½Å±¾²éÑ¯½ÇÉ«ÉËº¦¼ÇÂ¼: ËÀÍö¹ÖÎï[%s]\n", pCha->GetName());
+		// LG("harm", "ï¿½Å±ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½É«ï¿½Ëºï¿½ï¿½ï¿½Â¼: ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½[%s]\n", pCha->GetName());
 		int nNo = (int)(lua_tonumber(L, 2));
 	    SHarmRec *pHarm = pCha->m_pHate->GetHarmRec(nNo);
 		if(pHarm->btValid > 0)
@@ -1021,10 +1021,10 @@ inline int lua_GetChaHarmByNo(lua_State *L)
 	return 2;
 }
 
-// È¡µÃÄ¿±êÁÐ±íÀïµÄÖ¸¶¨Ä¿±êÔì³ÉµÄ³ðºÞ¶È
+// È¡ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½Ð±ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ÉµÄ³ï¿½Þ¶ï¿½
 inline int lua_GetChaHateByNo(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==2 && lua_islightuserdata(L, 1) && lua_isnumber(L, 2));
 	if(!bValid) 
     {
@@ -1035,7 +1035,7 @@ inline int lua_GetChaHateByNo(lua_State *L)
 	CCharacter *pCha = (CCharacter*)lua_touserdata(L, 1);
 	if(pCha)
 	{
-		// LG("harm", "½Å±¾²éÑ¯½ÇÉ«³ðºÞ¶È: ËÀÍö¹ÖÎï[%s]\n", pCha->GetName());
+		// LG("harm", "ï¿½Å±ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½É«ï¿½ï¿½Þ¶ï¿½: ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½[%s]\n", pCha->GetName());
 		int nNo = (int)(lua_tonumber(L, 2));
 	    SHarmRec *pHarm = pCha->m_pHate->GetHarmRec(nNo);
 		if(pHarm->btValid > 0)
@@ -1057,10 +1057,10 @@ inline int lua_GetChaHateByNo(lua_State *L)
 	return 2;
 }
 
-// Ìí¼Ó³ðºÞ¶È
+// ï¿½ï¿½ï¿½Ó³ï¿½Þ¶ï¿½
 inline int lua_AddHate(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==3 && lua_islightuserdata(L, 1) && lua_islightuserdata(L, 2) && lua_isnumber(L, 3));
 	if(!bValid) 
     {
@@ -1082,7 +1082,7 @@ inline int lua_AddHate(lua_State *L)
 
 inline int lua_GetChaPos(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
 	int nPNum = lua_gettop (L);
     BOOL bValid = (nPNum==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
@@ -1103,10 +1103,10 @@ inline int lua_GetChaPos(lua_State *L)
 	return 0;
 T_E}
 
-// ¼ì²é½ÇÉ«ÊÇ·ñÔÚÕ½¶·ÖÐ
+// ï¿½ï¿½ï¿½ï¿½É«ï¿½Ç·ï¿½ï¿½ï¿½Õ½ï¿½ï¿½ï¿½ï¿½
 inline int lua_IsChaFighting(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -1123,10 +1123,10 @@ inline int lua_IsChaFighting(lua_State *L)
 	return 1;	
 T_E}
 
-// ¼ì²é½ÇÉ«ÊÇ·ñÔÚË¯ÃßÖÐ
+// ï¿½ï¿½ï¿½ï¿½É«ï¿½Ç·ï¿½ï¿½ï¿½Ë¯ï¿½ï¿½ï¿½ï¿½
 inline int lua_IsChaSleeping(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -1147,11 +1147,11 @@ T_E}
 
 
 
-// ½ÇÉ«¼¤»îÊÓÒ°
-// ²ÎÊý£º½ÇÉ«µØÖ·£¬¼¤»îÓë·ñ£¨1£¬¼¤»î¡£0£¬Í£Ö¹¼¤»î£©
+// ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò°
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½ï¿½ï¿½î¡£0ï¿½ï¿½Í£Ö¹ï¿½ï¿½ï¿½î£©
 inline int lua_ChaActEyeshot(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==2 && lua_islightuserdata(L, 1) && lua_isnumber(L, 2));
 	if(!bValid) 
     {
@@ -1167,10 +1167,10 @@ inline int lua_ChaActEyeshot(lua_State *L)
 	return 0;
 T_E}
 
-// ·µ»Ø¾àÀëÖ¸¶¨×ø±ê¸½½ü×î½üµÄ½ÇÉ«
+// ï¿½ï¿½ï¿½Ø¾ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ê¸½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä½ï¿½É«
 inline int lua_GetChaByRange(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==5 && lua_isnumber(L, 2) && lua_isnumber(L, 3) && lua_isnumber(L, 4) && lua_isnumber(L, 5));
     if(!bValid) 
     {
@@ -1182,23 +1182,23 @@ inline int lua_GetChaByRange(lua_State *L)
 	
 	SubMap *pMap = NULL;
 	
-	// µ¥Î»¾ùÎªÀåÃ×
-	int x = (int)lua_tonumber(L, 2); // ×ø±ê
+	// ï¿½ï¿½Î»ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½
+	int x = (int)lua_tonumber(L, 2); // ï¿½ï¿½ï¿½ï¿½
 	int y = (int)lua_tonumber(L, 3);
-	if(pSelf) // Èç¹û´«ÈëÁË½ÇÉ«Ö¸Õë, ÔòÈ¡Æä×ø±ê
+	if(pSelf) // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë½ï¿½É«Ö¸ï¿½ï¿½, ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	{
 		x = pSelf->GetShape().centre.x;
 		y = pSelf->GetShape().centre.y;
 		pMap = pSelf->GetSubMap(); 
 	}
-	else // Ã»ÓÐ´«Èë½ÇÉ«Ö¸ÕëÔòÒª¼ì²âµ±Ç°µØÍ¼ÊÇ·ñÎª¿Õ
+	else // Ã»ï¿½Ð´ï¿½ï¿½ï¿½ï¿½É«Ö¸ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½âµ±Ç°ï¿½ï¿½Í¼ï¿½Ç·ï¿½Îªï¿½ï¿½
 	{
 		CHECK_MAP
 		pMap = g_pScriptMap;
 	}
 	
-	int r = (int)lua_tonumber(L, 4);    // °ë¾¶
-	int flag = (int)lua_tonumber(L, 5); // ±êÖ¾, 0 Íæ¼Ò 1¹ÖÎï
+	int r = (int)lua_tonumber(L, 4);    // ï¿½ë¾¶
+	int flag = (int)lua_tonumber(L, 5); // ï¿½ï¿½Ö¾, 0 ï¿½ï¿½ï¿½ 1ï¿½ï¿½ï¿½ï¿½
 	
 	
 	CCharacter *pCTarget = NULL;
@@ -1213,17 +1213,17 @@ inline int lua_GetChaByRange(lua_State *L)
 	{
 		if(pCTempCha==pSelf) continue;
 		
-		if (flag==0) // Ñ°ÕÒÍæ¼Ò
+		if (flag==0) // Ñ°ï¿½ï¿½ï¿½ï¿½ï¿½
 		{
 			if(!pCTempCha->IsPlayerCha()) continue;
-			if(pCTempCha->IsGMCha())      continue; // GMÍæ¼Ò±»Ìø¹ý
-			if(!pCTempCha->IsLiveing())   continue; // ËÀÍöµÄÍæ¼Ò±»Ìø¹ý   
-			if(!pCTempCha->GetActControl(enumACTCONTROL_BEUSE_SKILL)) continue; // ´¦ÓÚ²»ÄÜ±»¹¥»÷µÄ×´Ì¬		
+			if(pCTempCha->IsGMCha())      continue; // GMï¿½ï¿½Ò±ï¿½ï¿½ï¿½ï¿½ï¿½
+			if(!pCTempCha->IsLiveing())   continue; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò±ï¿½ï¿½ï¿½ï¿½ï¿½   
+			if(!pCTempCha->GetActControl(enumACTCONTROL_BEUSE_SKILL)) continue; // ï¿½ï¿½ï¿½Ú²ï¿½ï¿½Ü±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬		
 		}
 		
 		if (flag==1 && pCTempCha->IsPlayerCha()) continue;
 
-		// ÒÑ·½ÈËÔ±±»Ìø¹ý, ÓÃÓÚpkµº
+		// ï¿½Ñ·ï¿½ï¿½ï¿½Ô±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½pkï¿½ï¿½
 		if(pSelf && pCTempCha->IsFriend(pSelf))
 		{
 			continue;
@@ -1248,10 +1248,10 @@ inline int lua_GetChaByRange(lua_State *L)
 	return 0;
 T_E}
 
-// ½â³ý·¶Î§ÄÚµÄËùÓÐÒþÉí×´Ì¬
+// ï¿½ï¿½ï¿½ï¿½ï¿½Î§ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬
 inline int lua_ClearHideChaByRange(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==5 && lua_isnumber(L, 2) && lua_isnumber(L, 3) && lua_isnumber(L, 4) && lua_isnumber(L, 5));
     if(!bValid) 
     {
@@ -1263,23 +1263,23 @@ inline int lua_ClearHideChaByRange(lua_State *L)
 	
 	SubMap *pMap = NULL;
 	
-	// µ¥Î»¾ùÎªÀåÃ×
-	int x = (int)lua_tonumber(L, 2); // ×ø±ê
+	// ï¿½ï¿½Î»ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½
+	int x = (int)lua_tonumber(L, 2); // ï¿½ï¿½ï¿½ï¿½
 	int y = (int)lua_tonumber(L, 3);
-	if(pSelf) // Èç¹û´«ÈëÁË½ÇÉ«Ö¸Õë, ÔòÈ¡Æä×ø±ê
+	if(pSelf) // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë½ï¿½É«Ö¸ï¿½ï¿½, ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	{
 		x = pSelf->GetShape().centre.x;
 		y = pSelf->GetShape().centre.y;
 		pMap = pSelf->GetSubMap(); 
 	}
-	else // Ã»ÓÐ´«Èë½ÇÉ«Ö¸ÕëÔòÒª¼ì²âµ±Ç°µØÍ¼ÊÇ·ñÎª¿Õ
+	else // Ã»ï¿½Ð´ï¿½ï¿½ï¿½ï¿½É«Ö¸ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½âµ±Ç°ï¿½ï¿½Í¼ï¿½Ç·ï¿½Îªï¿½ï¿½
 	{
 		CHECK_MAP
 		pMap = g_pScriptMap;
 	}
 	
-	int r = (int)lua_tonumber(L, 4);    // °ë¾¶
-	int flag = (int)lua_tonumber(L, 5); // ±êÖ¾, 0 Íæ¼Ò 1¹ÖÎï
+	int r = (int)lua_tonumber(L, 4);    // ï¿½ë¾¶
+	int flag = (int)lua_tonumber(L, 5); // ï¿½ï¿½Ö¾, 0 ï¿½ï¿½ï¿½ 1ï¿½ï¿½ï¿½ï¿½
 	
 	
 	CCharacter *pCTarget = NULL;
@@ -1294,11 +1294,11 @@ inline int lua_ClearHideChaByRange(lua_State *L)
 	{
 		if(pCTempCha==pSelf) continue;
 		
-		if (flag==0) // Ñ°ÕÒÍæ¼Ò
+		if (flag==0) // Ñ°ï¿½ï¿½ï¿½ï¿½ï¿½
 		{
 			if(!pCTempCha->IsPlayerCha()) continue;
-			if(pCTempCha->IsGMCha())      continue; // GMÍæ¼Ò±»Ìø¹ý
-			if(!pCTempCha->IsLiveing())   continue; // ËÀÍöµÄÍæ¼Ò±»Ìø¹ý   
+			if(pCTempCha->IsGMCha())      continue; // GMï¿½ï¿½Ò±ï¿½ï¿½ï¿½ï¿½ï¿½
+			if(!pCTempCha->IsLiveing())   continue; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò±ï¿½ï¿½ï¿½ï¿½ï¿½   
 		}
 		
 		if (flag==1 && pCTempCha->IsPlayerCha()) continue;
@@ -1311,7 +1311,7 @@ inline int lua_ClearHideChaByRange(lua_State *L)
 			pCTarget = pCTempCha;
 			if(pCTarget->m_CSkillState.HasState(SSTATE_HIDE))
 			{
-				//pCTarget->SystemNotice("ÒþÉí±»Ê¶ÆÆ!");
+				//pCTarget->SystemNotice("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¶ï¿½ï¿½!");
 				pCTarget->SystemNotice(RES_STRING(GM_LUA_GAMECTRL_H_00002));
 				pCTarget->Show();
 			}
@@ -1321,10 +1321,10 @@ inline int lua_ClearHideChaByRange(lua_State *L)
 T_E}
 
 
-// ·µ»Ø¾àÀëÄÚµÄËùÓÐÖ¸¶¨ÀàÐÍ¹Ö
+// ï¿½ï¿½ï¿½Ø¾ï¿½ï¿½ï¿½ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½Í¹ï¿½
 inline int lua_GetChaSetByRange(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==5 && lua_isnumber(L, 2) && lua_isnumber(L, 3) && lua_isnumber(L, 4) && lua_isnumber(L, 5));
     if(!bValid) 
     {
@@ -1336,23 +1336,23 @@ inline int lua_GetChaSetByRange(lua_State *L)
 	
 	SubMap *pMap = NULL;
 	
-	// µ¥Î»¾ùÎªÀåÃ×
-	int x = (int)lua_tonumber(L, 2); // ×ø±ê
+	// ï¿½ï¿½Î»ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½
+	int x = (int)lua_tonumber(L, 2); // ï¿½ï¿½ï¿½ï¿½
 	int y = (int)lua_tonumber(L, 3);
-	if(pSelf) // Èç¹û´«ÈëÁË½ÇÉ«Ö¸Õë, ÔòÈ¡Æä×ø±ê
+	if(pSelf) // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë½ï¿½É«Ö¸ï¿½ï¿½, ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	{
 		x = pSelf->GetShape().centre.x;
 		y = pSelf->GetShape().centre.y;
 		pMap = pSelf->GetSubMap(); 
 	}
-	else // Ã»ÓÐ´«Èë½ÇÉ«Ö¸ÕëÔòÒª¼ì²âµ±Ç°µØÍ¼ÊÇ·ñÎª¿Õ
+	else // Ã»ï¿½Ð´ï¿½ï¿½ï¿½ï¿½É«Ö¸ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½âµ±Ç°ï¿½ï¿½Í¼ï¿½Ç·ï¿½Îªï¿½ï¿½
 	{
 		CHECK_MAP
 		pMap = g_pScriptMap;
 	}
 	
-	int r = (int)lua_tonumber(L, 4);            // °ë¾¶
-	int nMonsterType = (int)lua_tonumber(L, 5); // ¹ÖÎïÀàÐÍ
+	int r = (int)lua_tonumber(L, 4);            // ï¿½ë¾¶
+	int nMonsterType = (int)lua_tonumber(L, 5); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	
 	if (!pMap)
 		return 0;
@@ -1362,7 +1362,7 @@ inline int lua_GetChaSetByRange(lua_State *L)
 	unsigned long	ulMinDist2 = r * r, ulTempDist2;
 	long	lDistX, lDistY;
 	CCharacter  *pCTempCha = NULL;
-	CCharacter	*ChaList[12]; // ×î¶à¿ÉÒÔÕÙ¼¯12¸ö, Ó¦idleÒªÇó, ´Ó4¸ö¸ÄÎª12¸ö
+	CCharacter	*ChaList[12]; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¼ï¿½12ï¿½ï¿½, Ó¦idleÒªï¿½ï¿½, ï¿½ï¿½4ï¿½ï¿½ï¿½ï¿½Îª12ï¿½ï¿½
 	Long	lRangeB[] = {x, y, 0};
 	Long	lRangeE[] = {enumRANGE_TYPE_CIRCLE, r};
 	pMap->BeginSearchInRange(lRangeB, lRangeE);
@@ -1372,7 +1372,7 @@ inline int lua_GetChaSetByRange(lua_State *L)
 		if(pCTempCha==pSelf) continue;
 		if (pCTempCha->IsPlayerCha()) continue;
 
-		if(nMonsterType!=0 && nMonsterType!=pCTempCha->GetCat()) continue; // Ö»ÕÒÍ¬Àà¹ÖÎï
+		if(nMonsterType!=0 && nMonsterType!=pCTempCha->GetCat()) continue; // Ö»ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ï¿½ï¿½
 		
 		lDistX = pCTempCha->GetShape().centre.x - x;
 		lDistY = pCTempCha->GetShape().centre.y - y;
@@ -1393,38 +1393,62 @@ inline int lua_GetChaSetByRange(lua_State *L)
 T_E}
 
 
-// ²éÕÒÖ¸¶¨Î»ÖÃºÍ·¶Î§ÄÚµÄµÀ¾ß
+// ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½Î»ï¿½ÃºÍ·ï¿½Î§ï¿½ÚµÄµï¿½ï¿½ï¿½ - Find ground item by character and range
 inline int lua_FindItem(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
-    BOOL bValid = (lua_gettop (L)==3 && lua_isnumber(L, 1) && lua_isnumber(L, 2) && lua_isnumber(L, 3));
+    BOOL bValid = (lua_gettop(L) == 2 && lua_islightuserdata(L, 1) && lua_isnumber(L, 2));
 	if(!bValid) 
 	{
 		PARAM_ERROR
         return 0;
 	}
 
-	int x = (int)lua_tonumber(L, 1);
-	int y = (int)lua_tonumber(L, 2);
-	int r = (int)lua_tonumber(L, 3);
-	Long lRangeB[] = { x, y, 0 };				  // Î»ÖÃ£¬·½Ïò
-	Long lRangeE[] = {enumRANGE_TYPE_CIRCLE, r};  // Ô²ÐÎÇøÓò
-	SubMap *pMap = g_pScriptMap;
-	//pMap->BeginSearchInRange(lRangeB, lRangeE);
-	//CItem* pCItem;
-	//pCItem = pMap->GetNextItemInRange();
-	//if(pCItem)
-	//{
-	//	lua_pushlightuserdata(L, (void*)pCItem);
-	//	return 1;
-	//}
+	CCharacter *pCha = (CCharacter*)lua_touserdata(L, 1);
+	if (!pCha) return 0;
+
+	int r = (int)lua_tonumber(L, 2);
+
+	// Access the character's EyeshotCell to find nearby ground items
+	CEyeshotCell *pCell = pCha->m_pCEyeshotHost;
+	if (!pCell) return 0;
+
+	int cx = pCha->GetShape().centre.x;
+	int cy = pCha->GetShape().centre.y;
+	long r2 = (long)r * r;
+
+	// Iterate items in the character's eyeshot cell
+	CItem *pClosest = NULL;
+	long lMinDist2 = r2;
+
+	CItem *pItem = pCell->m_pCItemL;
+	while (pItem)
+	{
+		const Point &pos = pItem->GetPos();
+		long dx = pos.x - cx;
+		long dy = pos.y - cy;
+		long dist2 = dx * dx + dy * dy;
+		if (dist2 < lMinDist2)
+		{
+			lMinDist2 = dist2;
+			pClosest = pItem;
+		}
+		// Navigate through item linked list in EyeshotCell
+		Entity *pNext = pItem->m_pCEyeshotCellNext;
+		pItem = pNext ? pNext->IsItem() : NULL;
+	}
+
+	if (pClosest)
+	{
+		lua_pushlightuserdata(L, (void*)pClosest);
+		return 1;
+	}
 	return 0;
 }
 
-// ½ÇÉ«¼ñÆðµÀ¾ß
+// ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline int lua_PickItem(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==2 && lua_islightuserdata(L, 1) && lua_islightuserdata(L, 2));
 	if(!bValid) 
     {
@@ -1439,10 +1463,10 @@ inline int lua_PickItem(lua_State *L)
 	return 0;
 }
 
-// ·µ»ØÖ¸¶¨µÀ¾ßµÄ×ø±ê
+// ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ßµï¿½ï¿½ï¿½ï¿½ï¿½
 inline int lua_GetItemPos(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -1457,10 +1481,10 @@ inline int lua_GetItemPos(lua_State *L)
 	return 2;
 }
 
-// ¼ì²éÖ¸¶¨½ÇÉ«Ä¿±êÎ»ÖÃÊÇ·ñ¿É´ï
+// ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½É«Ä¿ï¿½ï¿½Î»ï¿½ï¿½ï¿½Ç·ï¿½É´ï¿½
 inline int lua_IsPosValid(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==3 && lua_islightuserdata(L, 1) && lua_isnumber(L, 2) && lua_isnumber(L, 3));
 	if(!bValid) 
     {
@@ -1481,11 +1505,11 @@ inline int lua_IsPosValid(lua_State *L)
 T_E}
 
 
-// È¡µÃ½ÇÉ«ÃæÏò·½ÃæÇ°ÃæµÄÎ»ÖÃ
+// È¡ï¿½Ã½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½Î»ï¿½ï¿½
 #define PI 3.1415926
 inline int lua_GetChaFacePos(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==1 && lua_islightuserdata(L, 1));
 	if(!bValid) 
     {
@@ -1509,10 +1533,10 @@ inline int lua_GetChaFacePos(lua_State *L)
 	return 0;
 }
 
-// ÉèÖÃ¹ÖÎïµÄÃæÏò½Ç¶È
+// ï¿½ï¿½ï¿½Ã¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¶ï¿½
 inline int lua_SetChaFaceAngle(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==2 && lua_islightuserdata(L, 1) && lua_isnumber(L,2));
 	if(!bValid) 
     {
@@ -1528,10 +1552,10 @@ inline int lua_SetChaFaceAngle(lua_State *L)
 	return 0;
 }
 
-// ÉèÖÃ¹ÖÎïÑ²Âßµã
+// ï¿½ï¿½ï¿½Ã¹ï¿½ï¿½ï¿½Ñ²ï¿½ßµï¿½
 inline int lua_SetChaPatrolPos(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==3 && lua_islightuserdata(L, 1) && lua_isnumber(L, 2) && lua_isnumber(L, 3));
 	if(!bValid) 
     {
@@ -1549,10 +1573,10 @@ inline int lua_SetChaPatrolPos(lua_State *L)
 }
 
 
-// ¹ÖÎï²úÉú±íÇé 
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 
 inline int lua_SetChaEmotion(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==2 && lua_islightuserdata(L, 1) && lua_isnumber(L, 2));
 	if(!bValid) 
     {
@@ -1570,7 +1594,7 @@ inline int lua_SetChaEmotion(lua_State *L)
 
 inline int lua_SetChaLifeTime(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop (L)==2 && lua_islightuserdata(L, 1) && lua_isnumber(L, 2));
 	if(!bValid) 
     {
@@ -1586,10 +1610,10 @@ inline int lua_SetChaLifeTime(lua_State *L)
 	return 0;
 }
 
-// ÉèÖÃÉËº¦Öµ¼ÆËã¿ª¹Ø
+// ï¿½ï¿½ï¿½ï¿½ï¿½Ëºï¿½Öµï¿½ï¿½ï¿½ã¿ªï¿½ï¿½
 inline  int lua_HarmLog(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     int log = (int)lua_tonumber(L, 1);
 	if(log) 
 	{
@@ -1599,11 +1623,11 @@ inline  int lua_HarmLog(lua_State *L)
 	return 0;
 }
 
-// »ñµÃ·þÎñÆ÷×ÊÔ´Ä¿Â¼
+// ï¿½ï¿½Ã·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô´Ä¿Â¼
 extern const char* GetResPath(const char*);
 inline int lua_GetResPath(lua_State *L)
 {
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop(L)==1 && lua_isstring(L, 1));
 	if(!bValid) 
     {
@@ -1623,10 +1647,10 @@ inline void lua_FrameMove()
  	luaL_dostring(g_pLuaState, "RunTimer()");
 T_E}
 
-// ÒÆ¶¯¶Ô»°¿òµØÍ¼¹Û²ìµã
+// ï¿½Æ¶ï¿½ï¿½Ô»ï¿½ï¿½ï¿½ï¿½Í¼ï¿½Û²ï¿½ï¿½
 inline int lua_view(lua_State *L)
 {T_B
-	// ²ÎÊýºÏ·¨ÐÔÅÐ±ð
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
     BOOL bValid = (lua_gettop(L)==2 && lua_isnumber(L, 1) && lua_isnumber(L, 2));
 	if(!bValid) 
     {
@@ -1646,7 +1670,7 @@ inline void lua_AIRun(CCharacter *pCha, DWORD dwResumeExecTime)
 	
 	static int g_test[20];
 	lua_getglobal(g_pLuaState, "ai_timer");
-	if (!lua_isfunction(g_pLuaState, -1)) // ²»ÊÇº¯ÊýÃû
+	if (!lua_isfunction(g_pLuaState, -1)) // ï¿½ï¿½ï¿½Çºï¿½ï¿½ï¿½ï¿½ï¿½
 	{
 		lua_pop(g_pLuaState, 1);
 		return;
@@ -1655,7 +1679,7 @@ inline void lua_AIRun(CCharacter *pCha, DWORD dwResumeExecTime)
 	lua_pushnumber(g_pLuaState, (DWORD) defCHA_SCRIPT_TIMER / 1000);
 	lua_pushnumber(g_pLuaState, (DWORD) dwResumeExecTime);
 	int r = lua_pcall(g_pLuaState, 3, 0, 0); 
-	if(r!=0) // Ö´ÐÐ³ö´í
+	if(r!=0) // Ö´ï¿½Ð³ï¿½ï¿½ï¿½
 	{
 		lua_callalert(g_pLuaState, r); 	
 	}
@@ -1671,7 +1695,7 @@ inline void lua_AIRun(CCharacter *pCha, DWORD dwResumeExecTime)
 	}*/
 
 	
-	// ²âÊÔcµ÷ÓÃluaº¯Êý, È¡·µ»ØÖµµÄÎÊÌâ
+	// ï¿½ï¿½ï¿½ï¿½cï¿½ï¿½ï¿½ï¿½luaï¿½ï¿½ï¿½ï¿½, È¡ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	/*
 	LG("return", "begin:\n");
 	for(int i = 0; i < 3; i++)
@@ -1692,14 +1716,14 @@ inline void lua_NPCRun(CCharacter *pCha)
 	
 	static int g_test[20];
 	lua_getglobal(g_pLuaState, "npc_timer");
-	if (!lua_isfunction(g_pLuaState, -1)) // ²»ÊÇº¯ÊýÃû
+	if (!lua_isfunction(g_pLuaState, -1)) // ï¿½ï¿½ï¿½Çºï¿½ï¿½ï¿½ï¿½ï¿½
 	{
 		lua_pop(g_pLuaState, 1);
 		return;
 	}
 	lua_pushlightuserdata(g_pLuaState, (void *)pCha);
 	int r = lua_pcall(g_pLuaState, 1, 0, 0); 
-	if(r!=0) // Ö´ÐÐ³ö´í
+	if(r!=0) // Ö´ï¿½Ð³ï¿½ï¿½ï¿½
 	{
 		lua_callalert(g_pLuaState, r); 	
 	}
@@ -1968,7 +1992,7 @@ inline int lua_EXLG(lua_State *L)
 			break;
 		default:
 			{
-				//str << "[ÎÞÐ§±êÊ¶(" << *(pszPos + 1) << ")]";
+				//str << "[ï¿½ï¿½Ð§ï¿½ï¿½Ê¶(" << *(pszPos + 1) << ")]";
 				str << "[noneffective signal(" << *(pszPos + 1) << ")]";
 				
 			}
@@ -2069,24 +2093,24 @@ inline int lua_SetMonsterAttr(lua_State* L)
 void RegisterLuaAI(lua_State *L);
 void ReloadAISdk();
 
-#define CHA_CHA     0 //  ÈËÈË½»Ò×
-#define CHA_SYS     1 //  ÈËÓëÏµÍ³½»Ò×   (ÈÓµ½µØÉÏ, °üº¬´¬µÄ)
-#define SYS_CHA     2 //  ÏµÍ³ÓëÈË½»Ò×1  (¼ñÆð¶«Î÷, °üº¬´¬µÄ)
-#define CHA_BUY     3 //  ÏµÍ³ÓëÈË½»Ò×2  (´ÓNPCÂò¶«Î÷)
-#define CHA_SELL    4 //  Âô¶«Î÷¸øNPC    (ÂôÈË±³°üµÀ¾ß)
-#define CHA_MIS     5 //  ÏµÍ³ÓëÈË½»Ò×3  (ÈÎÎñ»ñµÃÎïÆ·)
-#define MIS_CHA     6 //  ÈÎÎñÊÕ×ßÎïÆ·   
-#define SYS_BOAT    7 //  ½»Ò×ËùÓë´¬½»Ò× (Âò»õ)
-#define BOAT_SYS    8 //  ´¬Óë½»Ò×Ëù½»Ò× (Âô»õ)
-#define CHA_ENTER   9 //  ½øÓÎÏ·
-#define CHA_OUT    10 //  ³öÓÎÏ·
-#define CHA_VENDOR 11 //  ÈËÓëÌ¯½»Ò× 
-#define CHA_EXPEND 12 //  ÏûºÄ
-#define CHA_DELETE 13 //  É¾³ý
-#define CHA_BANK   14 //  ÒøÐÐ
-#define CHA_EQUIP  15 //  ×°±¸
+#define CHA_CHA     0 //  ï¿½ï¿½ï¿½Ë½ï¿½ï¿½ï¿½
+#define CHA_SYS     1 //  ï¿½ï¿½ï¿½ï¿½ÏµÍ³ï¿½ï¿½ï¿½ï¿½   (ï¿½Óµï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+#define SYS_CHA     2 //  ÏµÍ³ï¿½ï¿½ï¿½Ë½ï¿½ï¿½ï¿½1  (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+#define CHA_BUY     3 //  ÏµÍ³ï¿½ï¿½ï¿½Ë½ï¿½ï¿½ï¿½2  (ï¿½ï¿½NPCï¿½ï¿½ï¿½ï¿½)
+#define CHA_SELL    4 //  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½NPC    (ï¿½ï¿½ï¿½Ë±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+#define CHA_MIS     5 //  ÏµÍ³ï¿½ï¿½ï¿½Ë½ï¿½ï¿½ï¿½3  (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ·)
+#define MIS_CHA     6 //  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ·   
+#define SYS_BOAT    7 //  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë´¬ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½)
+#define BOAT_SYS    8 //  ï¿½ï¿½ï¿½ë½»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½)
+#define CHA_ENTER   9 //  ï¿½ï¿½ï¿½ï¿½Ï·
+#define CHA_OUT    10 //  ï¿½ï¿½ï¿½ï¿½Ï·
+#define CHA_VENDOR 11 //  ï¿½ï¿½ï¿½ï¿½Ì¯ï¿½ï¿½ï¿½ï¿½ 
+#define CHA_EXPEND 12 //  ï¿½ï¿½ï¿½ï¿½
+#define CHA_DELETE 13 //  É¾ï¿½ï¿½
+#define CHA_BANK   14 //  ï¿½ï¿½ï¿½ï¿½
+#define CHA_EQUIP  15 //  ×°ï¿½ï¿½
 
-// µÀ¾ß½»Ò×Log×¨ÓÃ
+// ï¿½ï¿½ï¿½ß½ï¿½ï¿½ï¿½Log×¨ï¿½ï¿½
 void TL(int nType, const char *pszCha1, const char *pszCha2, const char *pszTrade);
 
 

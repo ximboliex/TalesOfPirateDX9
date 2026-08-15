@@ -448,3 +448,6 @@ function special_ai(c, t, ai_type)
         ChaUseSkill(c, t, skill_id)
     end
 end
+
+-- Load advanced AI system
+dofile(GetResPath("script/ai/ai_advanced.lua"))

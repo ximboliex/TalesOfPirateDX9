@@ -168,7 +168,7 @@ def _create_armature(context, bone_infos, inv_bind_matrices, scale):
 
 
 def _apply_animation(context, arm_obj, bone_infos, keyframes, key_type, scale):
-    """Apply keyframe animation to the armature."""
+    """Apply keyframe animation to the armature using F-curves for performance."""
     if not keyframes:
         return
 
@@ -176,23 +176,42 @@ def _apply_animation(context, arm_obj, bone_infos, keyframes, key_type, scale):
     action = bpy.data.actions.new(name=arm_obj.name + "_Action")
     arm_obj.animation_data.action = action
 
-    context.view_layer.objects.active = arm_obj
-    arm_obj.select_set(True)
-    bpy.ops.object.mode_set(mode='POSE')
-
     # Set rotation mode to quaternion for all pose bones
     for pb in arm_obj.pose.bones:
         pb.rotation_mode = 'QUATERNION'
 
+    frame_num = len(keyframes)
+    bone_num = len(bone_infos)
+
+    # Pre-create F-curves for each bone (location x3 + rotation_quaternion x4)
+    bone_fcurves = {}  # bone_name -> (loc_fcurves[3], rot_fcurves[4])
+    for bone_idx, (name, bone_id, parent_id) in enumerate(bone_infos):
+        pose_bone = arm_obj.pose.bones.get(name)
+        if not pose_bone:
+            continue
+        data_path_loc = f'pose.bones["{name}"].location'
+        data_path_rot = f'pose.bones["{name}"].rotation_quaternion'
+        loc_curves = []
+        for i in range(3):
+            fc = action.fcurves.new(data_path=data_path_loc, index=i)
+            fc.keyframe_points.add(frame_num)
+            loc_curves.append(fc)
+        rot_curves = []
+        for i in range(4):
+            fc = action.fcurves.new(data_path=data_path_rot, index=i)
+            fc.keyframe_points.add(frame_num)
+            rot_curves.append(fc)
+        bone_fcurves[name] = (loc_curves, rot_curves)
+
+    # Fill keyframe data
     for frame_idx, frame_keys in enumerate(keyframes):
-        frame_number = frame_idx + 1
+        frame_number = float(frame_idx + 1)
 
         for bone_idx, key_data in enumerate(frame_keys):
-            if bone_idx >= len(bone_infos):
+            if bone_idx >= bone_num:
                 break
             bone_name = bone_infos[bone_idx][0]
-            pose_bone = arm_obj.pose.bones.get(bone_name)
-            if not pose_bone:
+            if bone_name not in bone_fcurves:
                 continue
 
             if key_data[0] == 'MAT43':
@@ -209,8 +228,18 @@ def _apply_animation(context, arm_obj, bone_infos, keyframes, key_type, scale):
                 mat = Quaternion((bw, bx, by, bz)).to_matrix().to_4x4()
                 mat.translation = Vector(bl_pos)
 
-            pose_bone.matrix = mat
-            pose_bone.keyframe_insert(data_path="location", frame=frame_number)
-            pose_bone.keyframe_insert(data_path="rotation_quaternion", frame=frame_number)
+            loc = mat.to_translation()
+            rot = mat.to_quaternion()
 
-    bpy.ops.object.mode_set(mode='OBJECT')
+            loc_curves, rot_curves = bone_fcurves[bone_name]
+            for i in range(3):
+                loc_curves[i].keyframe_points[frame_idx].co = (frame_number, loc[i])
+                loc_curves[i].keyframe_points[frame_idx].interpolation = 'LINEAR'
+            for i in range(4):
+                rot_curves[i].keyframe_points[frame_idx].co = (frame_number, rot[i])
+                rot_curves[i].keyframe_points[frame_idx].interpolation = 'LINEAR'
+
+    # Update all F-curves
+    for loc_curves, rot_curves in bone_fcurves.values():
+        for fc in loc_curves + rot_curves:
+            fc.update()

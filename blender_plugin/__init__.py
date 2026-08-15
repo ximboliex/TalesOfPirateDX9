@@ -1,16 +1,109 @@
 bl_info = {
-    "name": "Tales of Pirate DX9 Exporter (.lgo/.lmo/.lab)",
+    "name": "Tales of Pirate DX9 Import/Export (.lgo/.lmo/.lab)",
     "author": "TalesOfPirateDX9 Community",
-    "version": (1, 1, 0),
+    "version": (2, 0, 0),
     "blender": (3, 0, 0),
-    "location": "File > Export > Tales of Pirate (.lgo/.lmo/.lab)",
-    "description": "Export meshes and animations to Tales of Pirate DX9 binary format",
+    "location": "File > Import/Export > Tales of Pirate",
+    "description": "Import and export meshes and animations for Tales of Pirate DX9",
     "category": "Import-Export",
 }
 
 import bpy
 from bpy.props import StringProperty, BoolProperty, FloatProperty, EnumProperty, IntProperty
-from bpy_extras.io_utils import ExportHelper
+from bpy_extras.io_utils import ExportHelper, ImportHelper
+
+
+# ============================================================
+# IMPORT OPERATORS
+# ============================================================
+
+class ImportLGO(bpy.types.Operator, ImportHelper):
+    """Import Tales of Pirate DX9 .lgo/.lmo file"""
+    bl_idname = "import_scene.lgo"
+    bl_label = "Import LGO/LMO"
+    bl_options = {'PRESET', 'UNDO'}
+
+    filename_ext = ".lgo"
+
+    filter_glob: StringProperty(
+        default="*.lgo;*.lmo",
+        options={'HIDDEN'},
+    )
+
+    global_scale: FloatProperty(
+        name="Scale",
+        default=1.0,
+        min=0.001,
+        max=1000.0,
+    )
+
+    load_textures: BoolProperty(
+        name="Load Textures",
+        description="Try to find and load textures for viewport preview",
+        default=True,
+    )
+
+    texture_search_dir: StringProperty(
+        name="Texture Directory",
+        description="Directory to search for texture files",
+        default="",
+        subtype='DIR_PATH',
+    )
+
+    def execute(self, context):
+        from . import import_lgo
+        keywords = self.as_keywords(ignore=("filter_glob",))
+        return import_lgo.import_lgo(context, **keywords)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "global_scale")
+        layout.separator()
+        layout.prop(self, "load_textures")
+        if self.load_textures:
+            layout.prop(self, "texture_search_dir")
+
+
+class ImportLAB(bpy.types.Operator, ImportHelper):
+    """Import Tales of Pirate DX9 .lab animation file"""
+    bl_idname = "import_anim.lab"
+    bl_label = "Import LAB Animation"
+    bl_options = {'PRESET', 'UNDO'}
+
+    filename_ext = ".lab"
+
+    filter_glob: StringProperty(
+        default="*.lab",
+        options={'HIDDEN'},
+    )
+
+    global_scale: FloatProperty(
+        name="Scale",
+        default=1.0,
+        min=0.001,
+        max=1000.0,
+    )
+
+    apply_to_existing: BoolProperty(
+        name="Apply to Selected Armature",
+        description="Apply animation to the currently selected armature instead of creating a new one",
+        default=False,
+    )
+
+    def execute(self, context):
+        from . import import_lab
+        keywords = self.as_keywords(ignore=("filter_glob",))
+        return import_lab.import_lab(context, **keywords)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "global_scale")
+        layout.prop(self, "apply_to_existing")
+
+
+# ============================================================
+# EXPORT OPERATORS
+# ============================================================
 
 
 class ExportLGO(bpy.types.Operator, ExportHelper):
@@ -173,16 +266,27 @@ def menu_func_export(self, context):
     self.layout.operator(ExportLAB.bl_idname, text="Tales of Pirate Animation (.lab)")
 
 
+def menu_func_import(self, context):
+    self.layout.operator(ImportLGO.bl_idname, text="Tales of Pirate (.lgo/.lmo)")
+    self.layout.operator(ImportLAB.bl_idname, text="Tales of Pirate Animation (.lab)")
+
+
 def register():
+    bpy.utils.register_class(ImportLGO)
+    bpy.utils.register_class(ImportLAB)
     bpy.utils.register_class(ExportLGO)
     bpy.utils.register_class(ExportLAB)
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
 
 def unregister():
     bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
     bpy.utils.unregister_class(ExportLAB)
     bpy.utils.unregister_class(ExportLGO)
+    bpy.utils.unregister_class(ImportLAB)
+    bpy.utils.unregister_class(ImportLGO)
 
 
 if __name__ == "__main__":

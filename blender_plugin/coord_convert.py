@@ -1,0 +1,75 @@
+"""
+Coordinate system conversion between Blender and DirectX.
+Blender: Z-up, right-handed
+DirectX: Y-up, left-handed
+"""
+import struct
+
+
+def convert_position(x, y, z, scale=1.0):
+    """Convert Blender position (X,Y,Z) to DirectX (X,Z,Y) with left-hand flip."""
+    return (x * scale, z * scale, y * scale)
+
+
+def convert_normal(x, y, z):
+    """Convert Blender normal to DirectX normal."""
+    return (x, z, y)
+
+
+def convert_uv(u, v):
+    """Convert Blender UV to DirectX UV (flip V)."""
+    return (u, 1.0 - v)
+
+
+def convert_quaternion_blender_to_dx(w, x, y, z):
+    """
+    Convert Blender quaternion (WXYZ, right-hand Z-up)
+    to engine quaternion (XYZW, left-hand Y-up).
+    """
+    # Swap Y and Z axes, negate for handedness change
+    dx_x = x
+    dx_y = z
+    dx_z = y
+    dx_w = -w
+    return (dx_x, dx_y, dx_z, dx_w)
+
+
+def convert_matrix4x4_blender_to_dx(blender_matrix, scale=1.0):
+    """
+    Convert a Blender 4x4 matrix to DirectX row-major format.
+    Blender matrix is column-major in Python API.
+    Applies axis swap (Y<->Z) and scale.
+    Returns flat list of 16 floats (row-major).
+    """
+    # Blender Matrix is accessed as mat[col][row]
+    # Convert to row-major and swap Y/Z axes
+    # Swap rows 1 and 2, and columns 1 and 2
+    m = [[blender_matrix[col][row] for col in range(4)] for row in range(4)]
+
+    # Swap row 1 and row 2
+    m[1], m[2] = m[2], m[1]
+    # Swap column 1 and column 2
+    for row in range(4):
+        m[row][1], m[row][2] = m[row][2], m[row][1]
+
+    # Apply scale to translation
+    m[3][0] *= scale
+    m[3][1] *= scale
+    m[3][2] *= scale
+
+    # Flatten row-major
+    return [m[row][col] for row in range(4) for col in range(4)]
+
+
+def convert_matrix4x3_blender_to_dx(blender_matrix, scale=1.0):
+    """
+    Convert a Blender 4x4 matrix to DirectX 4x3 format (row-major, 12 floats).
+    Only the first 3 columns of a 4x4 row-major matrix.
+    """
+    mat44 = convert_matrix4x4_blender_to_dx(blender_matrix, scale)
+    # 4x3 = rows 0-3, columns 0-2 (skip col 3)
+    mat43 = []
+    for row in range(4):
+        for col in range(3):
+            mat43.append(mat44[row * 4 + col])
+    return mat43

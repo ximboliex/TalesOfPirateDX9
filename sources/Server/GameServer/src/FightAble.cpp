@@ -391,7 +391,7 @@ void CFightAble::SkillTarEffect(SFireUnit *pSFireSrc)
 	Long	lSrcOldHP = (long)pSrcCha->m_CChaAttr.GetAttr(ATTR_HP);
 	// 计算目标被攻击多少次后致死
 	for (int i = 0; i < pSFireSrc->sExecTime; i++)
-		g_CParser.DoString(pSFireSrc->pCSkillRecord->szEffect, enumSCRIPT_RETURN_NONE, 0, enumSCRIPT_PARAM_LIGHTUSERDATA, 2, pSrcCha, this->IsCharacter(), enumSCRIPT_PARAM_NUMBER, 1, pSrcCha->m_SFightInit.pSSkillGrid->chLv, DOSTRING_PARAM_END);
+		g_CParser.DoString(pSFireSrc->pCSkillRecord->szEffect, enumSCRIPT_RETURN_NONE, 0, enumSCRIPT_PARAM_LIGHTUSERDATA, 2, pSrcCha, this->IsCharacter(), enumSCRIPT_PARAM_NUMBER, 1, pSFireSrc->chSkillLevel, DOSTRING_PARAM_END);
 	lNowHP = (long)m_CChaAttr.GetAttr(ATTR_HP);
 	BeUseSkill(lOldHP, lNowHP, pSrcCha, pSFireSrc->pCSkillRecord->chHelpful);
 
@@ -564,7 +564,7 @@ void CFightAble::BeUseSkill(dbc::Long lPreHp, dbc::Long lNowHp, CCharacter *pCSr
 			CCharacter *pCha = IsCharacter();
 			if(pCha->m_HostCha!=pCSrcCha) // 主人攻击不记入伤害记录
 			{
-				pCha->m_pHate->AddHarm(pCSrcCha, Short(lPreHp - lNowHp), pCSrcCha->GetID());
+				pCha->m_pHate->AddHarm(pCSrcCha, static_cast<long long>(lPreHp) - lNowHp, pCSrcCha->GetID());
 			}
 		}
 	}
@@ -577,6 +577,8 @@ void CFightAble::SetMonsterFightObj(uLong ulObjWorldID, Long lObjHandle)
 		m_SFightInit.chTarType = 1;
 		m_SFightInit.lTarInfo1 = ulObjWorldID;
 		m_SFightInit.lTarInfo2 = lObjHandle;
+        auto* target = g_pGameApp->IsLiveingEntity(ulObjWorldID, lObjHandle);
+        m_SFightInit.ullTargetGeneration = target ? target->GetLifeGeneration() : 0;
 	}
 
 }
@@ -1256,7 +1258,8 @@ bool CFightAble::GetFightTargetShape(Square *pSTarShape)
 	if (m_SFightInit.chTarType == 1) // 目标是物体
 	{
 		Entity	*pTarObj = g_pGameApp->IsMapEntity(m_SFightInit.lTarInfo1, m_SFightInit.lTarInfo2);
-		if (!pTarObj)
+		if (!pTarObj || pTarObj->GetSubMap() != GetSubMap() ||
+            pTarObj->GetLifeGeneration() != m_SFightInit.ullTargetGeneration)
 			return false;
 		if (pSTarShape)
 		{
@@ -1373,8 +1376,8 @@ void CFightAble::RangeEffect(SFireUnit *pSFireSrc, SubMap *pCMap, Long *plRangeB
 	Long	lEParam[defSKILL_RANGE_EXTEP_NUM];
 	for (short i = 0; i < defSKILL_RANGE_EXTEP_NUM; i++)
 		lEParam[i] = pSFireSrc->pCSkillTData->sRange[i];
-	pCMap->BeginSearchInRange(plRangeBParam, lEParam, true);
-	while (pCFightObj = pCMap->GetNextCharacterInRange())
+	auto query = pCMap->QueryCharactersInRange(plRangeBParam, lEParam, true);
+	while (pCFightObj = query.Next())
 	{
 		if (!pCFightObj->IsLiveing()) // 对方已经死亡
 			continue;
@@ -1411,6 +1414,7 @@ void CFightAble::RangeEffect(SFireUnit *pSFireSrc, SubMap *pCMap, Long *plRangeB
 
 	if (pSFireSrc->pCSkillTData->sStateParam[0] != SSTATE_NONE)
 	{
+		pCMap->BeginSearchInRange(plRangeBParam, lEParam, true);
 		pCMap->RangeAddState(pSFireSrc->uchFightID, pSFireSrc->pCFightSrc->GetID(), pSFireSrc->pCFightSrc->GetHandle(),
 			pSFireSrc->pCSkillRecord->chApplyTarget, pSFireSrc->pCSkillRecord->chTarType, pSFireSrc->pCSkillRecord->chHelpful,
 			pSFireSrc->pCSkillTData->sStateParam);
@@ -1465,6 +1469,10 @@ bool CFightAble::SkillGeneral(Long lDist, Short sExecTime) // 普通技能
 		SFire.lTarInfo2 = m_SFightInit.lTarInfo2;
 		SFire.pCSkillRecord = m_SFightInit.pCSkillRecord;
 		SFire.pCSkillTData = m_SFightInit.pCSkillTData;
+        SFire.chSkillLevel = m_SFightInit.pSSkillGrid->chLv;
+        SFire.lSourceHandle = GetHandle();
+        SFire.ullSourceGeneration = GetLifeGeneration();
+        SFire.ullMapGeneration = m_submap->GetRuntimeGeneration();
 		SFire.sExecTime = sExecTime;
 
 		if (m_SFightInit.pCSkillRecord->sSkySpd > 0)
@@ -1519,6 +1527,10 @@ bool CFightAble::SkillGeneral(Long lDist, Short sExecTime) // 普通技能
 		SFire.lTarInfo2 = m_SFightInit.lTarInfo2;
 		SFire.pCSkillRecord = m_SFightInit.pCSkillRecord;
 		SFire.pCSkillTData = m_SFightInit.pCSkillTData;
+        SFire.chSkillLevel = m_SFightInit.pSSkillGrid->chLv;
+        SFire.lSourceHandle = GetHandle();
+        SFire.ullSourceGeneration = GetLifeGeneration();
+        SFire.ullMapGeneration = m_submap->GetRuntimeGeneration();
 		SFire.sExecTime = sExecTime;
 
 		if (m_SFightInit.pCSkillRecord->chApplyType == 3) // 溅射技能，范围伤害
@@ -1784,6 +1796,8 @@ T_E}
 
 bool CFightAble::IsRightSkillTar(CFightAble *pSkillSrc, Char chSkillObjType, Char chSkillObjHabitat, Char chSkillEffType, bool bIncHider)
 {T_B
+    if (!pSkillSrc || (pSkillSrc != g_pCSystemCha &&
+        (!GetSubMap() || pSkillSrc->GetSubMap() != GetSubMap()))) return false;
 	//if (GetPlayer() && GetPlayer()->GetGMLev() > 0) // 不能作用于GM
 	//	return false;
 	if (!bIncHider)
@@ -2611,7 +2625,7 @@ void CTimeSkillMgr::Add(SFireUnit *pSFireSrc, uLong ulLeftTick, SubMap *pCMap, P
 
 	// 设置数据并将之加入执行队列
 	pSCarrier->SFireSrc = *pSFireSrc;
-	pSCarrier->ulLeftTick = ulLeftTick;
+	pSCarrier->ullDueTick = GetTickCount64() + ulLeftTick;
 	pSCarrier->pCMap = pCMap;
 	pSCarrier->STargetPos = *pStarget;
 
@@ -2622,58 +2636,35 @@ void CTimeSkillMgr::Add(SFireUnit *pSFireSrc, uLong ulLeftTick, SubMap *pCMap, P
 T_E}
 
 void CTimeSkillMgr::Run(unsigned long ulCurTick)
-{T_B
-	unsigned long	ulTickDist = ulCurTick - m_ulTick;
-
-	if (ulTickDist < m_usFreq)
-		return;
-	m_ulTick = ulCurTick;
-
-	SMgrUnit	*pSCarrier, *pSLastCarrier;
-	pSCarrier = pSLastCarrier = m_pSExecQueue;
-	while (pSCarrier)
-	{
-		if (pSCarrier->ulLeftTick > ulTickDist)
-
-		{
-			pSCarrier->ulLeftTick -= ulTickDist;
-			pSLastCarrier = pSCarrier;
-			pSCarrier = pSCarrier->pSNext;
-
-		}
-		else // 载体的计时完成
-		{
-			ExecTimeSkill(pSCarrier);
-			// 从执行队列中脱链
-			if (pSCarrier == m_pSExecQueue)
-			{
-				m_pSExecQueue = pSCarrier->pSNext;
-
-				pSCarrier->pSNext = m_pSFreeQueue;
-				m_pSFreeQueue = pSCarrier;
-
-				pSLastCarrier = m_pSExecQueue;
-				pSCarrier = pSLastCarrier;
-			}
-			else
-			{
-				pSLastCarrier->pSNext = pSCarrier->pSNext;
-
-				pSCarrier->pSNext = m_pSFreeQueue;
-				m_pSFreeQueue = pSCarrier;
-
-				pSCarrier = pSLastCarrier->pSNext;
-			}
-		}
-	}
-T_E}
+{
+    const unsigned long elapsed = ulCurTick - m_ulTick;
+    if (elapsed < m_usFreq) return;
+    m_ulTick = ulCurTick;
+    const auto now = GetTickCount64();
+    unsigned int budget = 256;
+    auto** link = &m_pSExecQueue;
+    while (*link && budget)
+    {
+        auto* item = *link;
+        if (item->ullDueTick > now) { link = &item->pSNext; continue; }
+        *link = item->pSNext;
+        item->pSNext = nullptr;
+        ExecTimeSkill(item);
+        item->pSNext = m_pSFreeQueue;
+        m_pSFreeQueue = item;
+        --budget;
+    }
+}
 
 void CTimeSkillMgr::ExecTimeSkill(SMgrUnit *pFireInfo)
 {T_B
 	// 搜索符合条件的目标
 	CCharacter	*pSrcCha;
-	Entity	*pSrcEnt = g_pGameApp->IsLiveingEntity(pFireInfo->SFireSrc.ulID, pFireInfo->SFireSrc.pCFightSrc->GetHandle());
-	if (!pSrcEnt || !(pSrcCha = pSrcEnt->IsCharacter())) // 技能源已经无效
+	Entity	*pSrcEnt = g_pGameApp->IsLiveingEntity(pFireInfo->SFireSrc.ulID, pFireInfo->SFireSrc.lSourceHandle);
+	if (!pSrcEnt || !(pSrcCha = pSrcEnt->IsCharacter()) ||
+        pSrcEnt->GetLifeGeneration() != pFireInfo->SFireSrc.ullSourceGeneration ||
+        !pFireInfo->pCMap || pSrcEnt->GetSubMap() != pFireInfo->pCMap ||
+        pFireInfo->pCMap->GetRuntimeGeneration() != pFireInfo->SFireSrc.ullMapGeneration) // 技能源已经无效
 		return;
 
 	g_ulCurID = pSrcCha->GetID();

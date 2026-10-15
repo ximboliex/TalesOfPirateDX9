@@ -489,38 +489,25 @@ protected:
 };
 
 
-class CRangeCircle : public CRangeBase // 圆形范围对象
+class CRangeCircle : public CRangeBase
 {
 public:
-	BOOL	PointHitTest(int x, int y)
-	{
-		__int64	nDistXY2 = (x - _x) * (x - _x) + (y - _y) * (y - _y);
-		__int64	nR2 = _nRadius * _nRadius;
-
-		if (nDistXY2 <= nR2)
-			return TRUE;
-		else
-			return FALSE;
-	}
-	BOOL	RectHitTest(int x1, int y1, int x2, int y2)
-	{
-		__int64	nDist1 = (x1 - _x) * (x1 - _x) + (y1 - _y) * (y1 - _y);
-		__int64	nDist2 = (x2 - _x) * (x2 - _x) + (y1 - _y) * (y1 - _y);
-		__int64	nDist3 = (x1 - _x) * (x1 - _x) + (y2 - _y) * (y2 - _y);
-		__int64	nDist4 = (x2 - _x) * (x2 - _x) + (y2 - _y) * (y2 - _y);
-		__int64	nR2 = _nRadius * _nRadius;
-
-		if (nDist1 <= nR2 || nDist2 <= nR2 || nDist3 <= nR2 || nDist4 <= nR2
-			|| (_x >= x1 && _x <= x2 && _y >= y1 && _y <= y2)) // 圆心在参数范围内
-			return TRUE;
-		else
-			return FALSE;
-	}
-
-protected:
-
-private:
-
+    BOOL PointHitTest(int x, int y) override
+    {
+        const long long dx = static_cast<long long>(x) - _x;
+        const long long dy = static_cast<long long>(y) - _y;
+        const long long r = _nRadius;
+        // Axis rejection also keeps the following sum inside signed 64-bit range.
+        if (dx < -r || dx > r || dy < -r || dy > r) return FALSE;
+        return dx * dx + dy * dy <= r * r;
+    }
+    BOOL RectHitTest(int x1, int y1, int x2, int y2) override
+    {
+        if (x1 > x2 || y1 > y2) return FALSE;
+        const int x = _x < x1 ? x1 : (_x > x2 ? x2 : _x);
+        const int y = _y < y1 ? y1 : (_y > y2 ? y2 : _y);
+        return PointHitTest(x, y);
+    }
 };
 
 class CRangeSquare : public CRangeBase // 正方形范围对象

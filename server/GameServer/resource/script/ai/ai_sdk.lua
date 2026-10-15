@@ -83,7 +83,7 @@ function rand_move(cha, range)
     x, y = GetChaPos(cha)
     rx = x + range - Rand(range * 2)
     ry = y + range - Rand(range * 2)
-    if is_pos_valid(cha, x, y) == 0 then
+    if is_pos_valid(cha, rx, ry) == 0 then
         return
     end
     ChaMove(cha, rx, ry)
@@ -99,7 +99,7 @@ function birth_rand_move(cha, range)
     x, y = GetChaSpawnPos(cha)
     rx = x + range - Rand(range * 2)
     ry = y + range - Rand(range * 2)
-    if is_pos_valid(cha, x, y) == 0 then
+    if is_pos_valid(cha, rx, ry) == 0 then
         return
     end
     ChaMove(cha, rx, ry)

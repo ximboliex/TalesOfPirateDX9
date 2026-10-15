@@ -94,6 +94,8 @@ CCharacter::~CCharacter()
 void CCharacter::Initially()
 {T_B
 	CMoveAble::Initially();
+	m_CActCache.Clear();
+	m_HostCha = nullptr;
 
 	m_AIType = 0;
 	m_AITarget = 0;
@@ -219,6 +221,7 @@ void CCharacter::Finally()
 
 		BreakAction();
 		m_AITarget = 0;
+		m_HostCha = nullptr;
 		if (m_submap)
 			m_submap->GoOut(this);
 		CMoveAble::Finally();
@@ -1670,6 +1673,7 @@ T_E}
 
 void CCharacter::BreakAction(RPACKET pk)
 {
+	m_CActCache.Clear();
 	m_CAction.Interrupt();
 	ResetMove();
 	ResetFight();

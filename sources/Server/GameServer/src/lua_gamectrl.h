@@ -7,6 +7,7 @@
 #include "NPC.h"
 #include <strstream>
 #include <algorithm>
+#include <cmath>
 #include "TryUtil.h"
 #include "ChaAttr.h"
 #include "EventHandler.h"
@@ -474,7 +475,12 @@ inline int lua_ChaUseSkill(lua_State *L)
 		{
 			pCha->m_CActCache.AddCommand(enumCACHEACTION_SKILL);
 			pCha->m_CActCache.PushParam(&lSkillID, sizeof(long));
-			pCha->m_CActCache.PushParam(&pTarget, sizeof(CCharacter *));
+            dbc::uLong id = pTarget->GetID();
+            Long handle = pTarget->GetHandle();
+            auto generation = pTarget->GetLifeGeneration();
+            pCha->m_CActCache.PushParam(&id, sizeof(id));
+            pCha->m_CActCache.PushParam(&handle, sizeof(handle));
+            pCha->m_CActCache.PushParam(&generation, sizeof(generation));
 		}
     }
 
@@ -801,8 +807,11 @@ inline int lua_SetChaTarget(lua_State *L)
 	}
 	if (pCha)
     {
+        if (pTarget && (!pTarget->IsLiveing() || pTarget->GetSubMap() != pCha->GetSubMap())) pTarget = nullptr;
 		if (pTarget)
 		{
+            pCha->m_SFightInit.ullTargetGeneration = pTarget->GetLifeGeneration();
+            pCha->m_SMoveInit.STargetInfo.ullTargetGeneration = pTarget->GetLifeGeneration();
 			pCha->m_AITarget = pTarget;
 			pCha->m_SFightInit.chTarType = 1;
 			pCha->m_SFightInit.lTarInfo1 = pTarget->GetID();
@@ -836,8 +845,14 @@ inline int lua_GetChaTarget(lua_State *L)
 	CCharacter *pCha = (CCharacter*)lua_touserdata(L, 1);
 	if(pCha && pCha->m_AITarget)
 	{
-		lua_pushlightuserdata(L, pCha->m_AITarget);
-		return 1;
+        auto* target = g_pGameApp->IsLiveingEntity(pCha->m_SFightInit.lTarInfo1, pCha->m_SFightInit.lTarInfo2);
+        if (target && target == pCha->m_AITarget && target->GetSubMap() == pCha->GetSubMap() &&
+            target->GetLifeGeneration() == pCha->m_SFightInit.ullTargetGeneration)
+        {
+            lua_pushlightuserdata(L, target);
+            return 1;
+        }
+        pCha->m_AITarget = nullptr;
 	}
 	return 0;
 T_E}
@@ -1002,7 +1017,7 @@ inline int lua_GetChaHarmByNo(lua_State *L)
 		// LG("harm", "脚本查询角色伤害记录: 死亡怪物[%s]\n", pCha->GetName());
 		int nNo = (int)(lua_tonumber(L, 2));
 	    SHarmRec *pHarm = pCha->m_pHate->GetHarmRec(nNo);
-		if(pHarm->btValid > 0)
+		if(pHarm && pHarm->btValid > 0)
 		{
 			if(pHarm->IsChaValid())
 			{
@@ -1038,7 +1053,7 @@ inline int lua_GetChaHateByNo(lua_State *L)
 		// LG("harm", "脚本查询角色仇恨度: 死亡怪物[%s]\n", pCha->GetName());
 		int nNo = (int)(lua_tonumber(L, 2));
 	    SHarmRec *pHarm = pCha->m_pHate->GetHarmRec(nNo);
-		if(pHarm->btValid > 0)
+		if(pHarm && pHarm->btValid > 0)
 		{
 			if(pHarm->IsChaValid())
 			{
@@ -1070,8 +1085,11 @@ inline int lua_AddHate(lua_State *L)
 
 	CCharacter *pTarget = (CCharacter*)lua_touserdata(L, 1);
 	CCharacter *pAtk    = (CCharacter*)lua_touserdata(L, 2);
-	short sHate         = (short)lua_tonumber(L, 3);
-	if(pTarget)
+	const double inputHate = static_cast<double>(lua_tonumber(L, 3));
+    if (!std::isfinite(inputHate)) return 0;
+    const double limit = static_cast<double>(MAX_HATE_VALUE);
+    const long long sHate = static_cast<long long>((std::max)(-limit, (std::min)(inputHate, limit)));
+	if(pTarget && pAtk && pTarget->GetSubMap() == pAtk->GetSubMap())
 	{
 		pTarget->m_pHate->AddHate(pAtk, sHate, pAtk->GetID());
 	} 
@@ -1208,8 +1226,8 @@ inline int lua_GetChaByRange(lua_State *L)
 	CCharacter	*pCTempCha;
 	Long	lRangeB[] = {x, y, 0};
 	Long	lRangeE[] = {enumRANGE_TYPE_CIRCLE, r};
-	pMap->BeginSearchInRange(lRangeB, lRangeE);
-	while (pCTempCha = pMap->GetNextCharacterInRange())
+	auto query = pMap->QueryCharactersInRange(lRangeB, lRangeE);
+	while (pCTempCha = query.Next())
 	{
 		if(pCTempCha==pSelf) continue;
 		
@@ -1289,8 +1307,8 @@ inline int lua_ClearHideChaByRange(lua_State *L)
 	CCharacter	*pCTempCha;
 	Long	lRangeB[] = {x, y, 0};
 	Long	lRangeE[] = {enumRANGE_TYPE_CIRCLE, r};
-	pMap->BeginSearchInRange(lRangeB, lRangeE, true);
-	while (pCTempCha = pMap->GetNextCharacterInRange())
+	auto query = pMap->QueryCharactersInRange(lRangeB, lRangeE, true);
+	while (pCTempCha = query.Next())
 	{
 		if(pCTempCha==pSelf) continue;
 		
@@ -1365,9 +1383,9 @@ inline int lua_GetChaSetByRange(lua_State *L)
 	CCharacter	*ChaList[12]; // 最多可以召集12个, 应idle要求, 从4个改为12个
 	Long	lRangeB[] = {x, y, 0};
 	Long	lRangeE[] = {enumRANGE_TYPE_CIRCLE, r};
-	pMap->BeginSearchInRange(lRangeB, lRangeE);
+	auto query = pMap->QueryCharactersInRange(lRangeB, lRangeE);
 	int n = 0;
-	while (pCTempCha = pMap->GetNextCharacterInRange())
+	while (pCTempCha = query.Next())
 	{
 		if(pCTempCha==pSelf) continue;
 		if (pCTempCha->IsPlayerCha()) continue;
@@ -1410,7 +1428,7 @@ inline int lua_FindItem(lua_State *L)
 	Long lRangeB[] = { x, y, 0 };				  // 位置，方向
 	Long lRangeE[] = {enumRANGE_TYPE_CIRCLE, r};  // 圆形区域
 	SubMap *pMap = g_pScriptMap;
-	//pMap->BeginSearchInRange(lRangeB, lRangeE);
+	//auto query = pMap->QueryCharactersInRange(lRangeB, lRangeE);
 	//CItem* pCItem;
 	//pCItem = pMap->GetNextItemInRange();
 	//if(pCItem)
@@ -1470,7 +1488,7 @@ inline int lua_IsPosValid(lua_State *L)
 
 	CCharacter *pCha = (CCharacter*)lua_touserdata(L, 1);
 	bool bCanMove = false;
-	if (pCha)
+	if (pCha && pCha->GetSubMap())
 		bCanMove = pCha->GetSubMap()->IsMoveAble(pCha, (int)lua_tonumber(L, 2), (int)lua_tonumber(L, 3));
 	if(bCanMove)
 		lua_pushnumber(L, 1);	

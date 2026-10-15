@@ -43,6 +43,10 @@ struct SFireUnit
 
 	CFightAble	*pCFightSrc;
 	dbc::uLong	ulID;
+    dbc::Long lSourceHandle;
+    unsigned long long ullSourceGeneration;
+    unsigned long long ullMapGeneration;
+    dbc::Char chSkillLevel;
 	Point		SSrcPos;
 	dbc::Long	lTarInfo1;
 	dbc::Long	lTarInfo2;
@@ -65,6 +69,7 @@ struct SFightInit
 		dbc::Long		lTarInfo2;
 	};
 
+	unsigned long long ullTargetGeneration;
 	dbc::Short		sStopState;		// 技能停止后的状态（enumEXISTS_WAITING, enumEXISTS_SLEEPING）
 };
 
@@ -90,7 +95,7 @@ public:
 		bool		bCrt;			// 爆击
 		bool		bMiss;			// Miss
 
-		long		lERangeBParam[defSKILL_RANGE_BASEP_NUM];	// 区域基本参数（中心坐标，方向）
+		dbc::Long	lERangeBParam[defSKILL_RANGE_BASEP_NUM];	// 区域基本参数（中心坐标，方向）
 	};
 
 	dbc::Short	GetFightState(void) {return m_SFightProc.sState;}
@@ -244,10 +249,10 @@ public:
 	struct SMgrUnit
 	{
 		SFireUnit	SFireSrc;
-		dbc::uLong	ulLeftTick;	// 剩余时间
+		unsigned long long ullDueTick;	// 剩余时间
 		SubMap		*pCMap;
 		Point		STargetPos;	// 目标位置
-		long		lERangeBParam[defSKILL_RANGE_BASEP_NUM];	// 区域基本参数（中心坐标，方向）
+		dbc::Long	lERangeBParam[defSKILL_RANGE_BASEP_NUM];	// 区域基本参数（中心坐标，方向）
 		SMgrUnit	*pSNext;
 	};
 

@@ -60,6 +60,10 @@ public:
 	void			SetRadius(const long &lRadius) {m_shape.radius = lRadius;}
 	const long		&GetRadius() const {return m_shape.radius;}
 
+	// Internal incarnation token; never serialized into legacy packets.
+	unsigned long long GetLifeGeneration() const { return m_ullLifeGeneration; }
+	void AdvanceLifeGeneration() { if (++m_ullLifeGeneration == 0) ++m_ullLifeGeneration; }
+
 	dbc::uLong		GetID()const			{return m_ID;}
 	short			GetCat()const			{return m_cat;}
 	void			SetID(dbc::uLong ulID)	{m_ID = ulID;}
@@ -138,6 +142,7 @@ public:
 
 	CLogFile		m_CLog;
 	dbc::uLong		m_ID;
+	unsigned long long m_ullLifeGeneration = 0;
 
 protected:
 	Entity();

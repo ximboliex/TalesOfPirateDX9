@@ -532,19 +532,20 @@ void CCharacter::Cmd_BeginSkill(Short sPing, Point *pPath, Char chPointNum,
 			return;
 		}
 
-	SMoveInit	MoveInit;
-	SFightInit	FightInit;
+	SMoveInit	MoveInit{};
+	SFightInit	FightInit{};
 
 	if (SkillTarIsEntity(pSkill)) // ���ö�����ID
 	{
 		Entity *pTarEnt = g_pGameApp->IsMapEntity(lTarInfo1, lTarInfo2);
-		if (!pTarEnt) // ���󲻴���
+		if (!pTarEnt || pTarEnt->GetSubMap() != GetSubMap()) // ���󲻴���
 		{
 			FailedActionNoti(enumACTION_SKILL, enumFACTION_NOOBJECT);
 
 			return;
 		}
 		FightInit.chTarType = 1;
+		FightInit.ullTargetGeneration = pTarEnt->GetLifeGeneration();
 		MoveInit.STargetInfo.ulDist = GetSkillDist(pTarEnt, pSkill);
 
 		if (pSkill == m_SFightInit.pCSkillRecord
@@ -585,6 +586,7 @@ void CCharacter::Cmd_BeginSkill(Short sPing, Point *pPath, Char chPointNum,
 	FightInit.sStopState = chStopState;
 	FightInit.pCSkillTData = pCSkillTData;
 
+	MoveInit.STargetInfo.ullTargetGeneration = FightInit.ullTargetGeneration;
 	MoveInit.STargetInfo.chType = FightInit.chTarType;
 	MoveInit.STargetInfo.lInfo1 = FightInit.lTarInfo1;
 	MoveInit.STargetInfo.lInfo2 = FightInit.lTarInfo2;

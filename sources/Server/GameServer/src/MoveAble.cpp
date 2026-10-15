@@ -980,7 +980,8 @@ bool CMoveAble::GetMoveTargetShape(Square *pSTarShape)
 	if (m_SMoveInit.STargetInfo.chType == 1) // 目标是物体
 	{
 		Entity	*pTarObj = g_pGameApp->IsMapEntity(m_SMoveInit.STargetInfo.lInfo1, m_SMoveInit.STargetInfo.lInfo2);
-		if (!pTarObj)
+		if (!pTarObj || pTarObj->GetSubMap() != GetSubMap() ||
+            pTarObj->GetLifeGeneration() != m_SMoveInit.STargetInfo.ullTargetGeneration)
 			return false;
 		if (pSTarShape)
 		{

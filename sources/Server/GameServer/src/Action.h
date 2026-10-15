@@ -69,6 +69,7 @@ public:
 		dbc::Char	szParam[defMAX_CACHE_ACTION_PARAM_LEN];
 		dbc::Char	chParamPos;
 
+		unsigned long long ullOwnerGeneration;
 		SAction	*pSNext;
 	};
 
@@ -78,6 +79,7 @@ public:
 	void	AddCommand(dbc::Short sCommand);
 	void	PushParam(void *pParam, dbc::Char chSize);
 	void	Run(void);
+	void Clear();
 	void	ExecAction(SAction *pSCarrier);
 
 protected:
@@ -86,6 +88,10 @@ private:
 	CCharacter	*m_pCOwn;
 
 	SAction	*m_pSExecQueue;	// 执行队列
+	SAction* m_pSTail = nullptr;
+	SAction* m_pSBuilding = nullptr;
+	unsigned int m_uPending = 0;
+	unsigned long long m_ullCancelVersion = 0;
 	SAction	*m_pSFreeQueue;	// 空闲队列
 
 };

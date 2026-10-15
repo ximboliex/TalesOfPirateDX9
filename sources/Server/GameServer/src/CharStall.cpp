@@ -155,11 +155,11 @@ namespace mission
 		CCharacter	*pCTempCha = NULL;
 		Long	lRangeB[] = {x, y, 0};
 		Long	lRangeE[] = {enumRANGE_TYPE_CIRCLE, r};
-		pMap->BeginSearchInRange(lRangeB, lRangeE);
+		auto query = pMap->QueryCharactersInRange(lRangeB, lRangeE);
 
 
 		 /*
-		while (pCTempCha = pMap->GetNextCharacterInRange())
+		while (pCTempCha = query.Next())
 		{
 			if(pCTempCha->IsNpc())
 			{
@@ -193,7 +193,7 @@ namespace mission
 		lRangeB[2] = 0;
 		pCTempCha = NULL;
 		*/
-		while (pCTempCha = pMap->GetNextCharacterInRange())
+		while (pCTempCha = query.Next())
 		{
 			if (pCTempCha->IsNpc())
 			{

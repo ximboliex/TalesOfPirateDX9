@@ -324,7 +324,9 @@ bool SubMap::IsMoveAble(Entity *pCEnt, Long lPosX, Long lPosY)
 	CFightAble	*pCCha = 0;
 	if (!pCEnt || !(pCCha = pCEnt->IsFightAble()))
 		return false;
-	return g_IsMoveAble((char)pCCha->m_CChaAttr.GetAttr(ATTR_CHATYPE), pCCha->m_pCChaRecord->chTerritory, pCEnt->GetAreaAttr()); //存在障碍
+	if (!IsValidPos(lPosX, lPosY)) return false;
+    return g_IsMoveAble((char)pCCha->m_CChaAttr.GetAttr(ATTR_CHATYPE),
+        pCCha->m_pCChaRecord->chTerritory, GetAreaAttr(lPosX, lPosY)); //存在障碍
 T_E}
 
 BOOL SubMap::LoadEventEntity()
@@ -961,8 +963,8 @@ CCharacter*	SubMap::FindCharacter( dbc::uLong ulID, const Point& point )
 	CCharacter* pCha = NULL;
 	Long	lRangeB[] = {point.x, point.y, 0};
 	Long	lRangeE[] = {enumRANGE_TYPE_CIRCLE, 10 * 100};
-	BeginSearchInRange(lRangeB, lRangeE);
-	while (pCha = GetNextCharacterInRange())
+	auto query = QueryCharactersInRange(lRangeB, lRangeE);
+	while (pCha = query.Next())
 	{
 		if(pCha->GetID() == ulID)
 			break;
@@ -976,6 +978,30 @@ T_E}
 // plRangeEParam 区域扩展参数：个数 defSKILL_RANGE_EXTEP_NUM， 内容 范围类型，类型参数
 // bIncludeHideEnti 是否包含隐身的实体
 //=============================================================================
+CCharacter* CCharacterRangeQuery::Next()
+{
+    if (!map || map->GetRuntimeGeneration() != mapGeneration) return nullptr;
+    while (cursor < targets.size())
+    {
+        const auto& target = targets[cursor++];
+        auto* entity = g_pGameApp->IsValidEntity(target.id, target.handle);
+        if (entity && entity->GetSubMap() == map && entity->GetLifeGeneration() == target.generation)
+            return entity->IsCharacter();
+    }
+    return nullptr;
+}
+
+CCharacterRangeQuery SubMap::QueryCharactersInRange(Long* base, Long* extent, bool includeHidden)
+{
+    CCharacterRangeQuery query;
+    query.map = this;
+    query.mapGeneration = GetRuntimeGeneration();
+    BeginSearchInRange(base, extent, includeHidden);
+    while (auto* cha = GetNextCharacterInRange())
+        query.targets.push_back({cha->GetID(), cha->GetHandle(), cha->GetLifeGeneration()});
+    return query;
+}
+
 void SubMap::BeginSearchInRange(Long *plRangeBParam, Long *plRangeEParam, bool bIncludeHideEnti)
 {T_B
     m_sRangeCurMgrUnit = -1;
@@ -1104,13 +1130,17 @@ Research:
 		if (!m_bIncludeHideEnti)
 		{
 			CCharacter	*pCCha = m_pRangeCurEntiNode->m_pCCha;
-			if (pCCha && pCCha->IsHide())
+			if (!pCCha || pCCha->IsHide() || !m_pCBaseRange->PointHitTest(pCCha->GetPos().x, pCCha->GetPos().y))
 				goto Research;
 			else
 				return pCCha;
 		}
 		else
-			return m_pRangeCurEntiNode->m_pCCha;
+        {
+            auto* cha = m_pRangeCurEntiNode->m_pCCha;
+            if (!cha || !m_pCBaseRange->PointHitTest(cha->GetPos().x, cha->GetPos().y)) goto Research;
+            return cha;
+        }
 	}
 	else
 		return 0;
@@ -1741,6 +1771,7 @@ void SubMap::Open()
 	if (m_bIsRun)
 		return;
 
+	++m_ullRuntimeGeneration;
 	m_bIsRun = true;
 T_E}
 
@@ -1772,6 +1803,7 @@ void SubMap::Close()
 {T_B
 	if (!m_bIsRun)
 		return;
+	++m_ullRuntimeGeneration;
 	string	strScript = "map_copy_before_close_";
 	strScript += GetName();
 	g_CParser.DoString(strScript.c_str(), enumSCRIPT_RETURN_NONE, 0, enumSCRIPT_PARAM_LIGHTUSERDATA, 1, this, DOSTRING_PARAM_END);
@@ -1897,213 +1929,110 @@ void SubMap::DealPlayer(string& function)
 T_E}
 
 //=============================================================================
-COutMapCha::COutMapCha(unsigned short usFreq)
-{T_B
-	m_ulTick = GetTickCount();
-	m_usFreq = usFreq;
-T_E}
+COutMapCha::COutMapCha(unsigned short /*usFreq*/) {}
+COutMapCha::~COutMapCha() = default;
 
-COutMapCha::~COutMapCha()
-{T_B
-	/*
-	SMgrUnit	*pSCarrier;
-	pSCarrier = m_pSExecQueue;
-	while (pSCarrier)
-	{
-		m_pSExecQueue = pSCarrier->pSNext;
-		delete pSCarrier;
-		pSCarrier = m_pSExecQueue;
-	}
+bool COutMapCha::SMgrUnit::IsValidCha() const
+{
+    Entity* entity = g_pGameApp->IsValidEntity(ulChaID, lHandle);
+    return entity && entity == pCCha && entity->GetLifeGeneration() == ullGeneration;
+}
 
-	pSCarrier = m_pSFreeQueue;
-	while (pSCarrier)
-	{
-		m_pSFreeQueue = pSCarrier->pSNext;
-		delete pSCarrier;
-		pSCarrier = m_pSFreeQueue;
-	}
+void COutMapCha::Push(std::unique_ptr<SMgrUnit> unit)
+{
+    spawnQueue.emplace_back(std::move(unit));
+    std::push_heap(spawnQueue.begin(), spawnQueue.end(), Later);
+}
 
-	*/
-	spawnQueue.clear();
-T_E}
+void COutMapCha::Add(CCharacter* cha, dbc::uLong id, SSwitchMapInfo* info,
+    Char action, Long witherMs, Long resumeMs)
+{
+    if (!cha || !info || !info->pSrcMap || cha->IsPlayerCha()) return;
+    // -1 retains the corpse indefinitely, matching the entity lifetime contract.
+    if (witherMs < 0) { cha->SetInOutMapQueue(false); return; }
+    auto unit = std::make_unique<SMgrUnit>();
+    unit->pCCha = cha;
+    unit->ulChaID = id;
+    unit->lHandle = cha->GetHandle();
+    unit->ullGeneration = cha->GetLifeGeneration();
+    unit->SwitchInfo = *info;
+    unit->chAction = action;
+    unit->ullDueTick = GetTickCount64() + static_cast<unsigned long long>(witherMs);
+    unit->ullResumeDelay = resumeMs > 0 ? static_cast<unsigned long long>(resumeMs) : 0;
+    unit->bRespawn = resumeMs >= 0 && cha->GetLifeTime() == 0;
+    unit->ullSequence = ++m_ullSequence;
+    Push(std::move(unit));
+}
 
-void COutMapCha::Add(CCharacter *pCObj, dbc::uLong	ulChaID, SSwitchMapInfo *pSwitchInfo, Char chAction, Long lLeftTick1, Long lLeftTick2)
-{T_B
-	if (!pCObj)
-		return;
-
-	auto pSCarrier = std::make_unique<SMgrUnit>();
-	pSCarrier->pCCha = pCObj;
-	pSCarrier->ulChaID = ulChaID;
-	memcpy(&pSCarrier->SwitchInfo, pSwitchInfo, sizeof(SSwitchMapInfo));
-	pSCarrier->chAction = chAction;
-	pSCarrier->lLeftTick1 = lLeftTick1;
-	pSCarrier->lLeftTick2 = lLeftTick2;
-	pSCarrier->chStep = 1;
-
-	spawnQueue.emplace_back(std::move(pSCarrier));
-	
-	// Spawn queue recoded - Mdr September 2020
-
-T_E}
-
-void COutMapCha::Run(unsigned long ulCurTick)
-{T_B
-	
-	long	lTickDist = ulCurTick - m_ulTick;
-
-	if (lTickDist < m_usFreq) {
-	return;
-	}
-	m_ulTick = ulCurTick;
-
-	spawnQueue.erase(
-		std::remove_if(spawnQueue.begin(), spawnQueue.end(),
-			[&](std::unique_ptr<SMgrUnit>& pSCarrier)
-			{
-				if (!pSCarrier)
-				{
-					return true;
-				}
-
-				if (!pSCarrier->IsValidCha())
-				{
-					return true;
-				}
-
-				switch (pSCarrier->chStep)
-				{
-				case 1:
-				{
-					pSCarrier->lLeftTick1 -= lTickDist;
-					if (pSCarrier->lLeftTick1 <= 0)
-					{
-						ExecTimeCha(pSCarrier.get());
-						return false;
-					}
-				}
-				break;
-				case 2:
-				{
-					pSCarrier->lLeftTick2 -= lTickDist;
-					if (pSCarrier->lLeftTick2 <= 0)
-					{
-						ExecTimeCha(pSCarrier.get());
-						return true;
-					}
-				}
-				break;
-				}
-
-				return false;
-			}
-	), spawnQueue.end());
-
-	//vector<SMgrUnit*>::iterator it = spawnQueue.begin();
-	//int n = 0;
-	//while (it != spawnQueue.end()) {
-	//	it = spawnQueue.begin();
-	//	SMgrUnit* pSCarrier = spawnQueue.at(n);
-	//	
-	//	if (!pSCarrier) 
-	//	{
-	//		it = spawnQueue.erase(it);
-	//		continue;
-	//	}
-	//	if (!pSCarrier->IsValidCha()) 
-	//	{
-	//		it = spawnQueue.erase(it);
-	//		continue;
-	//	}
-	//	if (pSCarrier->chStep == 1)
-	//	{
-	//		
-	//		pSCarrier->lLeftTick1 -= lTickDist;
-	//		if (pSCarrier->lLeftTick1 <= 0) {
-	//			ExecTimeCha(pSCarrier);
-	//			continue;
-	//		}
-	//	}
-	//	else if (pSCarrier->chStep == 2)
-	//	{
-	//		pSCarrier->lLeftTick2 -= lTickDist;
-	//		if (pSCarrier->lLeftTick2 <= 0) {
-	//			ExecTimeCha(pSCarrier);
-	//			it = spawnQueue.erase(it);
-	//			continue;
-	//		}
-	//	}
-	//	it++;
-	//	n++;
-	//}
-	//
-T_E}
+void COutMapCha::Run(unsigned long /*ulCurTick*/)
+{
+    const auto now = GetTickCount64();
+    // Bound work per update; overdue work stays queued, never discarded.
+    unsigned int budget = 256;
+    while (!spawnQueue.empty() && spawnQueue.front()->ullDueTick <= now && budget--)
+    {
+        std::pop_heap(spawnQueue.begin(), spawnQueue.end(), Later);
+        auto unit = std::move(spawnQueue.back());
+        spawnQueue.pop_back(); // callbacks cannot invalidate a queue iterator
+        if (!unit->IsValidCha()) continue;
+        ExecTimeCha(unit.get());
+        if (unit->chStep == 2 && unit->IsValidCha()) Push(std::move(unit));
+    }
+}
 
 void COutMapCha::Drop()
 {
-T_B
+    // A map reset preserves permanent population, but never touches recycled slots.
+    auto pending = std::move(spawnQueue);
+    spawnQueue.clear();
+    for (auto& unit : pending)
+    {
+        if (!unit || !unit->IsValidCha()) continue;
+        ExecTimeCha(unit.get());
+        if (unit->chStep == 2 && unit->IsValidCha()) ExecTimeCha(unit.get());
+    }
+}
 
-	for (const auto& pSCarrier : spawnQueue)
-	{
-		if (pSCarrier)
-		{
-			ExecTimeCha(pSCarrier.get());
-			ExecTimeCha(pSCarrier.get());
-		}
-	}
-	spawnQueue.clear();
-
-T_E}
-
-void COutMapCha::ExecTimeCha(SMgrUnit *pChaInfo)
-{T_B
-	if (pChaInfo->chStep == 1)
-	{
-		pChaInfo->SwitchInfo.pSrcMap->GoOut(pChaInfo->pCCha);
-		pChaInfo->pCCha->SetExistState(enumEXISTS_RESUMEING);
-		pChaInfo->chStep++;
-	}
-	else if (pChaInfo->chStep == 2)
-	{
-		switch (pChaInfo->chAction)
-		{
-		case	enumCHA_TIMEER_ENTERMAP:
-			{
-				CCharacter	*pCCha = pChaInfo->pCCha;
-				if (pCCha->IsPlayerCha()) // 不应该出现的情况
-				{
-					//LG("怪物重生错误", "怪物名称 %s，玩家角色名称 %s(%s)\n", pCCha->GetLogName(), pCCha->GetPlyMainCha()->GetLogName(), pCCha->GetPlyCtrlCha()->GetLogName());
-					LG("monster renascence errror", "monster name %s，character player name %s(%s)\n", pCCha->GetLogName(), pCCha->GetPlyMainCha()->GetLogName(), pCCha->GetPlyCtrlCha()->GetLogName());
-					break;
-				}
-				
-				
-				if(pCCha->GetLifeTime()!=0)
-				{
-					break;
-				}
-
-				pCCha->SetInOutMapQueue(false);
-				pCCha->m_chSelRelive = enumEPLAYER_RELIVE_NONE;
-
-				g_ulCurID = pCCha->GetID();
-				g_lCurHandle = pCCha->GetHandle();
-
-				pCCha->setAttr(ATTR_HP, pCCha->m_CChaAttr.GetAttr(ATTR_MXHP));	// 当前HP
-				pCCha->setAttr(ATTR_SP, pCCha->m_CChaAttr.GetAttr(ATTR_MXSP));	// 当前SP
-				//pCCha->m_timerScripts.Reset();
-				pCCha->SetExistState(enumEXISTS_NATALITY);
-				
-				pCCha->SwitchMap(pChaInfo->SwitchInfo.pSrcMap, pChaInfo->SwitchInfo.szTarMapName, pChaInfo->SwitchInfo.STarPos.x, pChaInfo->SwitchInfo.STarPos.y, false, enumSWITCHMAP_DIE, pChaInfo->SwitchInfo.pSrcMap->GetCopyNO());
-
-				pCCha->ResetAIState();	// 重设ai所需的状态记录
-
-				g_ulCurID = defINVALID_CHA_ID;
-				g_lCurHandle = defINVALID_CHA_HANDLE;
-			}
-			break;
-		}
-		pChaInfo->chStep++;
-	}
-T_E}
-
+void COutMapCha::ExecTimeCha(SMgrUnit* unit)
+{
+    if (!unit || !unit->IsValidCha()) return;
+    auto* cha = unit->pCCha;
+    if (unit->chStep == 1)
+    {
+        if (cha->GetSubMap() != unit->SwitchInfo.pSrcMap)
+        {
+            cha->SetInOutMapQueue(false);
+            unit->chStep = 3;
+            return;
+        }
+        unit->SwitchInfo.pSrcMap->GoOut(cha);
+        cha->SetExistState(enumEXISTS_RESUMEING);
+        if (!unit->bRespawn || cha->GetLifeTime() != 0)
+        {
+            cha->SetInOutMapQueue(false);
+            unit->chStep = 3;
+            cha->Free();
+            return;
+        }
+        unit->chStep = 2;
+        unit->ullDueTick += unit->ullResumeDelay; // preserve overshoot across stages
+        return;
+    }
+    if (unit->chStep != 2) return;
+    unit->chStep = 3;
+    cha->SetInOutMapQueue(false);
+    if (cha->GetSubMap()) return; // externally reinserted: do not teleport or free it
+    if (unit->chAction != enumCHA_TIMEER_ENTERMAP || cha->GetLifeTime() != 0)
+    {
+        cha->Free();
+        return;
+    }
+    cha->AdvanceLifeGeneration();
+    cha->m_chSelRelive = enumEPLAYER_RELIVE_NONE;
+    cha->SetExistState(enumEXISTS_NATALITY);
+    cha->ResetAIState();
+    cha->SwitchMap(unit->SwitchInfo.pSrcMap, unit->SwitchInfo.szTarMapName,
+        unit->SwitchInfo.STarPos.x, unit->SwitchInfo.STarPos.y, false,
+        enumSWITCHMAP_DIE, unit->SwitchInfo.pSrcMap->GetCopyNO());
+    if (!cha->GetSubMap()) cha->Free(); // failed insertion must not orphan a pool slot
+}

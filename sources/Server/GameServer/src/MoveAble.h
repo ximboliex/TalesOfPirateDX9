@@ -32,6 +32,7 @@ public:
 			dbc::Long		lInfo2;
 		};
 		//
+		unsigned long long ullTargetGeneration;
 		dbc::uLong	ulDist;		// 对目标的距离（厘米）
 	};
 

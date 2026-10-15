@@ -41,6 +41,7 @@ T_E}
 
 void Entity::Initially()
 {T_B
+	AdvanceLifeGeneration();
 	m_CLog.SetEnable(g_bLogEntity);
 	//m_CLog.SetLogName("Î´ÃüÃûLog");
 m_CLog.SetLogName("Unnamed Log");

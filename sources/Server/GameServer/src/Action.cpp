@@ -10,6 +10,8 @@
 #include "MoveAble.h"
 #include "TryUtil.h"
 #include "Character.h"
+#include <algorithm>
+#include "GameApp.h"
 
 _DBC_USING;
 
@@ -218,115 +220,119 @@ CActionCache::~CActionCache()
 	}
 }
 
-void CActionCache::AddCommand(Short sCommand)
-{T_B
-	SAction	*pSCarrier = NULL;
+void CActionCache::Clear()
+{
+    ++m_ullCancelVersion;
+    while (m_pSExecQueue)
+    {
+        auto* item = m_pSExecQueue;
+        m_pSExecQueue = item->pSNext;
+        item->pSNext = m_pSFreeQueue;
+        m_pSFreeQueue = item;
+    }
+    m_pSTail = m_pSBuilding = nullptr;
+    m_uPending = 0;
+}
 
-	if (m_pSFreeQueue)
-	{
-		pSCarrier = m_pSFreeQueue;
-		m_pSFreeQueue = pSCarrier->pSNext;
-	}
-	else
-	{
-		pSCarrier = new SAction;
-		if (!pSCarrier)
-		{
-			//THROW_EXCP(excpMem, "缓存行动管理对象构造过程中分配内存失败");
-			THROW_EXCP(excpMem, RES_STRING(GM_ACTION_CPP_00001));
-		}
-	}
+void CActionCache::AddCommand(Short command)
+{
+    auto* item = m_pSFreeQueue;
+    if (item) m_pSFreeQueue = item->pSNext;
+    else item = new SAction;
+    item->sCommand = command;
+    item->chParamPos = 0;
+    item->ullOwnerGeneration = m_pCOwn->GetLifeGeneration();
+    item->pSNext = nullptr;
+    if (m_pSTail) m_pSTail->pSNext = item;
+    else m_pSExecQueue = item;
+    m_pSTail = m_pSBuilding = item;
+    ++m_uPending;
+}
 
-	pSCarrier->sCommand = sCommand;
-	pSCarrier->chParamPos = 0;
-
-	pSCarrier->pSNext = m_pSExecQueue;
-	m_pSExecQueue = pSCarrier;
-T_E}
-
-void CActionCache::PushParam(void *pParam, Char chSize)
-{T_B
-	if (m_pSExecQueue && (m_pSExecQueue->chParamPos + chSize <= defMAX_CACHE_ACTION_PARAM_LEN))
-	{
-		memcpy(m_pSExecQueue->szParam + m_pSExecQueue->chParamPos, pParam, chSize);
-		m_pSExecQueue->chParamPos += chSize;
-	}
-T_E}
+void CActionCache::PushParam(void* param, Char size)
+{
+    if (m_pSBuilding && param && size > 0 &&
+        static_cast<unsigned int>(m_pSBuilding->chParamPos) + size <= defMAX_CACHE_ACTION_PARAM_LEN)
+    {
+        memcpy(m_pSBuilding->szParam + m_pSBuilding->chParamPos, param, size);
+        m_pSBuilding->chParamPos += size;
+    }
+}
 
 void CActionCache::Run()
-{T_B
-	SAction	*pSCarrier, *pSLastCarrier;
-	pSCarrier = pSLastCarrier = m_pSExecQueue;
-	while (pSCarrier)
-	{
-		ExecAction(pSCarrier);
+{
+    const auto version = m_ullCancelVersion;
+    unsigned int budget = (std::min)(m_uPending, 256u);
+    while (m_pSExecQueue && budget-- && version == m_ullCancelVersion)
+    {
+        auto* item = m_pSExecQueue;
+        m_pSExecQueue = item->pSNext;
+        if (!m_pSExecQueue) m_pSTail = nullptr;
+        if (m_pSBuilding == item) m_pSBuilding = nullptr;
+        --m_uPending;
+        if (m_pCOwn->IsLiveing() && item->ullOwnerGeneration == m_pCOwn->GetLifeGeneration())
+            ExecAction(item);
+        item->pSNext = m_pSFreeQueue;
+        m_pSFreeQueue = item;
+    }
+}
 
-		if (pSCarrier == m_pSExecQueue)
-		{
-			m_pSExecQueue = pSCarrier->pSNext;
+namespace {
+template<class T>
+bool ReadCachedParam(const CActionCache::SAction* action, unsigned int& offset, T& value)
+{
+    if (offset + sizeof(T) > static_cast<unsigned int>(action->chParamPos)) return false;
+    memcpy(&value, action->szParam + offset, sizeof(T));
+    offset += sizeof(T);
+    return true;
+}
+}
 
-			pSCarrier->pSNext = m_pSFreeQueue;
-			m_pSFreeQueue = pSCarrier;
-
-			pSLastCarrier = m_pSExecQueue;
-			pSCarrier = pSLastCarrier;
-		}
-		else
-		{
-			pSLastCarrier->pSNext = pSCarrier->pSNext;
-
-			pSCarrier->pSNext = m_pSFreeQueue;
-			m_pSFreeQueue = pSCarrier;
-
-			pSCarrier = pSLastCarrier->pSNext;
-		}
-	}
-T_E}
-
-void CActionCache::ExecAction(SAction *pSCarrier)
-{T_B
-	Char	chCurParamPos = 0;
-	switch (pSCarrier->sCommand)
-	{
-	case	enumCACHEACTION_MOVE:
-		{
-			Short sPing = *((Short *)(pSCarrier->szParam + chCurParamPos));
-			chCurParamPos += sizeof(Short);
-			Char chPointNum = pSCarrier->szParam[chCurParamPos];
-			chCurParamPos += sizeof(Char);
-			Point *pPath = (Point *)(pSCarrier->szParam + chCurParamPos);
-			chCurParamPos += sizeof(Point) * chPointNum;
-			if (chCurParamPos == pSCarrier->chParamPos)
-				m_pCOwn->Cmd_BeginMove(sPing, pPath, chPointNum);
-			else if (chCurParamPos < pSCarrier->chParamPos)
-			{
-				Char chStopState = pSCarrier->szParam[chCurParamPos];
-				chCurParamPos += sizeof(Char);
-				if (chCurParamPos == pSCarrier->chParamPos)
-					m_pCOwn->Cmd_BeginMove(sPing, pPath, chPointNum, chStopState);
-			}
-		}
-		break;
-	case	enumCACHEACTION_SKILL:
-		{
-			Long lSkillID = *((Long *)(pSCarrier->szParam + chCurParamPos));
-			chCurParamPos += sizeof(Long);
-			CCharacter *pCTar = *((CCharacter **)(pSCarrier->szParam + chCurParamPos));
-			m_pCOwn->Cmd_BeginSkillDirect(lSkillID, pCTar);
-		}
-		break;
-	case	enumCACHEACTION_SKILL2:
-		{
-			Long lSkillID = *((Long *)(pSCarrier->szParam + chCurParamPos));
-			chCurParamPos += sizeof(Long);
-			Long lSkillLv = *((Long *)(pSCarrier->szParam + chCurParamPos));
-			chCurParamPos += sizeof(Long);
-			Long lPosX = *((Long *)(pSCarrier->szParam + chCurParamPos));
-			chCurParamPos += sizeof(Long);
-			Long lPosY = *((Long *)(pSCarrier->szParam + chCurParamPos));
-			chCurParamPos += sizeof(Long);
-			m_pCOwn->Cmd_BeginSkillDirect2(lSkillID, lSkillLv, lPosX, lPosY);
-		}
-		break;
-	}
-T_E}
+void CActionCache::ExecAction(SAction* action)
+{
+    unsigned int offset = 0;
+    Long skill = 0;
+    switch (action->sCommand)
+    {
+    case enumCACHEACTION_MOVE:
+    {
+        Short ping = 0;
+        Char count = 0;
+        Point path[2];
+        if (!ReadCachedParam(action, offset, ping) || !ReadCachedParam(action, offset, count) ||
+            count != 2 || !ReadCachedParam(action, offset, path)) return;
+        if (offset == static_cast<unsigned int>(action->chParamPos))
+            m_pCOwn->Cmd_BeginMove(ping, path, count);
+        else
+        {
+            Char stop = 0;
+            if (ReadCachedParam(action, offset, stop) && offset == static_cast<unsigned int>(action->chParamPos))
+                m_pCOwn->Cmd_BeginMove(ping, path, count, stop);
+        }
+        break;
+    }
+    case enumCACHEACTION_SKILL:
+    {
+        dbc::uLong id = 0;
+        Long handle = 0;
+        unsigned long long generation = 0;
+        if (!ReadCachedParam(action, offset, skill) || !ReadCachedParam(action, offset, id) ||
+            !ReadCachedParam(action, offset, handle) || !ReadCachedParam(action, offset, generation) ||
+            offset != static_cast<unsigned int>(action->chParamPos)) return;
+        auto* target = g_pGameApp->IsLiveingEntity(id, handle);
+        if (target && target->GetLifeGeneration() == generation &&
+            target->GetSubMap() == m_pCOwn->GetSubMap())
+            m_pCOwn->Cmd_BeginSkillDirect(skill, target);
+        break;
+    }
+    case enumCACHEACTION_SKILL2:
+    {
+        Long level = 0, x = 0, y = 0;
+        if (ReadCachedParam(action, offset, skill) && ReadCachedParam(action, offset, level) &&
+            ReadCachedParam(action, offset, x) && ReadCachedParam(action, offset, y) &&
+            offset == static_cast<unsigned int>(action->chParamPos))
+            m_pCOwn->Cmd_BeginSkillDirect2(skill, level, x, y);
+        break;
+    }
+    }
+}

@@ -5,6 +5,9 @@
 #include "GameAppNet.h"
 #include <tchar.h>
 #include <stdio.h>
+#include <algorithm>
+#include <memory>
+#include <vector>
 #include "EntitySpawn.h"
 #include "SwitchMapRecord.h"
 #include "CompCommand.h"
@@ -24,38 +27,57 @@ class Entity;
 class CFightAble;
 
 // 地图外角色队列，当怪物死亡后加入到此列表，重生后离开此列表
-class	COutMapCha
+class COutMapCha
 {
 public:
-	struct SMgrUnit
-	{
-		bool	IsValidCha(void) {if (!pCCha) return false; return pCCha->GetID() == ulChaID;}
+    struct SMgrUnit
+    {
+        bool IsValidCha() const;
+        CCharacter* pCCha = nullptr;
+        dbc::uLong ulChaID = 0;
+        dbc::Long lHandle = 0;
+        unsigned long long ullGeneration = 0;
+        unsigned long long ullDueTick = 0;
+        unsigned long long ullResumeDelay = 0;
+        unsigned long long ullSequence = 0;
+        bool bRespawn = false;
+        dbc::Char chAction = 0;
+        dbc::Char chStep = 1;
+        SSwitchMapInfo SwitchInfo{};
+    };
 
-		dbc::Long	lLeftTick1;	// 剩余时间
-		dbc::Long	lLeftTick2;	// 剩余时间
-		dbc::Char	chAction;	// 定时的行动
-		CCharacter	*pCCha;
-		dbc::uLong	ulChaID;
-		SSwitchMapInfo	SwitchInfo;
-		dbc::Char	chStep;
-
-		SMgrUnit	*pSNext;
-	};
-
-	COutMapCha(unsigned short usFreq = 2000);
-	~COutMapCha();
-
-	void	Add(CCharacter *pCObj, dbc::uLong ulChaID, SSwitchMapInfo *pSwitchInfo, dbc::Char chAction, dbc::Long lLeftTick1, dbc::Long lLeftTick2);
-	void	Run(unsigned long ulCurTick);
-	void	Drop();
-	void	ExecTimeCha(SMgrUnit *pChaInfo);
-	std::deque<std::unique_ptr<SMgrUnit>>  spawnQueue;	// Spawn queue rework - Mdr
+    explicit COutMapCha(unsigned short usFreq = 50);
+    ~COutMapCha();
+    void Add(CCharacter*, dbc::uLong, SSwitchMapInfo*, dbc::Char, dbc::Long, dbc::Long);
+    void Run(unsigned long ulCurTick);
+    // Drain valid permanent spawns to their reset position; retire temporaries.
+    void Drop();
+    void ExecTimeCha(SMgrUnit*);
 private:
-	unsigned long	m_ulTick;
-	unsigned short	m_usFreq;	// 执行心跳（频率）
+    static bool Later(const std::unique_ptr<SMgrUnit>& a, const std::unique_ptr<SMgrUnit>& b)
+    {
+        return a->ullDueTick != b->ullDueTick ? a->ullDueTick > b->ullDueTick : a->ullSequence > b->ullSequence;
+    }
+    void Push(std::unique_ptr<SMgrUnit> unit);
+    std::vector<std::unique_ptr<SMgrUnit>> spawnQueue;
+    unsigned long long m_ullSequence = 0;
 };
 
 // 地图副本类
+// A query owns its candidates; Lua callbacks may safely start another query.
+class CCharacterRangeQuery
+{
+public:
+    struct Target { dbc::uLong id; dbc::Long handle; unsigned long long generation; };
+    CCharacter* Next();
+private:
+    friend class SubMap;
+    SubMap* map = nullptr;
+    unsigned long long mapGeneration = 0;
+    std::vector<Target> targets;
+    std::size_t cursor = 0;
+};
+
 class SubMap
 {
 public:
@@ -64,6 +86,7 @@ public:
 
 	bool	Init(CMapRes *pCMapRes, dbc::Short sCopyNO = 0);
 	bool	IsRun(void) {return m_bIsRun;}
+	unsigned long long GetRuntimeGeneration() const { return m_ullRuntimeGeneration; }
 
 	const char*  GetName(void) {return m_pCMapRes->GetName();}
 
@@ -116,6 +139,7 @@ public:
 	// 在范围内搜索实体（依赖状态单元进行搜索，即搜索不到道具类）
 	void		BeginSearchInRange(dbc::Long *plRangeBParam, dbc::Long *plRangeEParam, bool bIncludeHideEnti = false);
 	CCharacter*	GetNextCharacterInRange(void);
+	CCharacterRangeQuery QueryCharactersInRange(dbc::Long*, dbc::Long*, bool includeHidden = false);
 
 	// 向范围增加技能状态
 	bool		RangeAddState(dbc::uChar uchFightID, dbc::uLong ulSrcWorldID, dbc::Long lSrcHandle,
@@ -314,6 +338,7 @@ public:
 
 	CEyeshotCell	**m_pCEyeshotCell; // 视野单元
 	CStateCell		***m_pCStateCell; // 状态单元
+	unsigned long long m_ullRuntimeGeneration = 1;
 	COutMapCha		m_COutMapCha; // 地图外角色
 	//供随机访问的地图信息数组
 	CActEyeshotCell	m_CEyeshotCellL;	// 激活的视野单元列表

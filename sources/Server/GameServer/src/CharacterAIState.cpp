@@ -28,14 +28,16 @@ void CCharacter::OnAI(DWORD dwCurTime)
 	if (m_SMoveInit.STargetInfo.chType == 1)
 	{
 		Entity *pEnt = g_pGameApp->IsLiveingEntity(m_SMoveInit.STargetInfo.lInfo1, m_SMoveInit.STargetInfo.lInfo2);
-		if (!pEnt)
+		if (!pEnt || pEnt->GetSubMap() != GetSubMap() ||
+            pEnt->GetLifeGeneration() != m_SMoveInit.STargetInfo.ullTargetGeneration)
 			m_SMoveInit.STargetInfo.chType = 0;
 	}
 
 	if (m_SFightInit.chTarType == 1)
 	{
 		Entity *pEnt = g_pGameApp->IsLiveingEntity(m_SFightInit.lTarInfo1, m_SFightInit.lTarInfo2);
-		if (!pEnt)
+		if (!pEnt || pEnt->GetSubMap() != GetSubMap() ||
+            pEnt->GetLifeGeneration() != m_SFightInit.ullTargetGeneration)
 		{
 			m_SFightInit.chTarType = 0;
 			m_AITarget = 0;

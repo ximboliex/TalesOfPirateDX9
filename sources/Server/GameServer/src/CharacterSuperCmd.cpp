@@ -624,8 +624,8 @@ BOOL CCharacter::DoGMCommand(const char *pszCmd, const char *pszParam)
 			long	lEParam[defSKILL_RANGE_EXTEP_NUM] = {enumRANGE_TYPE_CIRCLE, lRange};
 			CCharacter	*pCCha = 0, *pCFreeCha = 0;
 			long	lFindNum = 0, lKillNum = 0;
-			GetSubMap()->BeginSearchInRange(lBParam, lEParam);
-			while (pCCha = GetSubMap()->GetNextCharacterInRange())
+			auto query = GetSubMap()->QueryCharactersInRange(lBParam, lEParam);
+			while (pCCha = query.Next())
 			{
 				if (pCFreeCha)
 					pCFreeCha->Free();

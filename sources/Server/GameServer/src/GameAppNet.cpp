@@ -911,6 +911,11 @@ void CGameApp::ProcessPacket(GateServer* pGate, RPACKET pkt)
 					break;
 				if (g_pGameApp->IsValidEntity(pCCha->GetID(), pCCha->GetHandle()))
 				{
+                    // The new bounded payload excludes GateServer's two routing LONGs.
+                    if(cmd==CMD_CM_MAP_POI) {
+                        if(pkt.RemainData()!=25) break;
+                        pkt.DiscardLast(8);
+                    }
 					g_pNoticeChar = pCCha;
 
 					g_ulCurID = pCCha->GetID();

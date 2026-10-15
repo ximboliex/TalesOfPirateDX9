@@ -1,0 +1,41 @@
+# template_id kind(1=boss,2=miniboss,3=chest) radius_cm
+# Explicit source-backed seed; extend for the deployment's remaining points.
+# BossDW[1]: puzzleworld/puzzleworldmonster_conf.lua
+679 1 2000
+# Abaddon.Boss[5..19]: script/calculate/functions.lua, spawned by hell*/ctrl.lua
+974 1 2000
+975 1 2000
+976 1 2000
+977 1 2000
+978 1 2000
+979 1 2000
+980 1 2000
+981 1 2000
+982 1 2000
+983 1 2000
+984 1 2000
+985 1 2000
+986 1 2000
+987 1 2000
+988 1 2000
+# BossFC[1..4]: abandonedcitymonster_conf.lua; abandonedcity2/entry.lua
+# explicitly calls these four gatekeepers "mini bosses".
+690 2 2000
+691 2 2000
+692 2 2000
+693 2 2000
+# Scripted chest templates verified against CharacterInfo and spawns.
+694 3 2000
+705 3 2000
+709 3 2000
+710 3 2000
+711 3 2000
+712 3 2000
+713 3 2000
+714 3 2000
+715 3 2000
+716 3 2000
+717 3 2000
+859 3 2000
+860 3 2000
+861 3 2000

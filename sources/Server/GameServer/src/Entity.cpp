@@ -41,6 +41,7 @@ T_E}
 
 void Entity::Initially()
 {T_B
+    SetMapPOI(nullptr, 0);
 	AdvanceLifeGeneration();
 	m_CLog.SetEnable(g_bLogEntity);
 	//m_CLog.SetLogName("Î´ÃüÃûLog");

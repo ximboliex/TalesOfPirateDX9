@@ -24,7 +24,7 @@ end
 
 function after_player_login_PKmap(entry, player_name)
     map_name, posx, posy, tmap_name = GetMapEntryPosInfo(entry) --取地图入口的位置信息（地图名，坐标，目标地图名）
-    ChaNotice(player_name, "Announcement: According to reports, Lower Icicle Castle at ["..posx..","..posy.."] appears a portal to Arena Island. Please check it out.")
+    ChaNotice(player_name, "A portal has opened. Explore to discover its location on the world map.")
 
 end
 

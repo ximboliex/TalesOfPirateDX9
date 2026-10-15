@@ -3,6 +3,7 @@
 #include "EffectObj.h"
 #include "MindPower.h"
 #include ".\packfile.h"
+#include "MapPOI.h"
 
 class CGameScene;
 class CCharacter;
@@ -744,7 +745,8 @@ public:
 		MPIResourceMgr* res_mgr = g_Render.GetInterfaceMgr()->res_mgr;
 		for(int n = 0; n < TEXNUM; n++)
 		{
-			if(FAILED(lwLoadTex(&_pTex[n],res_mgr, pszName[n], 0, D3DFMT_A4R4G4B4)))
+			SAFE_RELEASE(_pTex[n]);
+            if(FAILED(lwLoadTex(&_pTex[n],res_mgr, pszName[n], 0, D3DFMT_A4R4G4B4)))
 			{
 				LG("ERROR",g_oLangRec.GetString(395),pszName[n]);
 				//return FALSE;
@@ -1096,12 +1098,17 @@ public:
 		constexpr auto MIN_ZOOM{ 1.0f }, MAX_ZOOM{ 8.0f };
 		if (s >= MIN_ZOOM && s <= MAX_ZOOM)
 		{
-			map_scale = s;
-			_bUpdate = false;
-			Show(true);
+            map_scale=s;
+            if(_bUpdate)Update(_nCenterX,_nCenterY);
 		}
 	}
-	float GetScale() const { return map_scale; }
+    float GetScale() const { return map_scale; }
+    map_poi::Projection GetProjection() const {
+        return {double(_rcWnd.left),double(_rcWnd.top),double(_rcWnd.right-_rcWnd.left),
+            double(_rcWnd.bottom-_rcWnd.top),double(_nCenterX),double(_nCenterY),double(map_scale)/125.0};
+    }
+    void SyncViewport(const RECT& rect);
+
 
 	void SetFollow(bool v) { follow_player = v; }
 	
@@ -1158,6 +1165,10 @@ private:
 	int						_nCenterX, _nCenterY;
 	int						_nInitX, _nInitY;
 
-	float map_scale{ 1.0f };
+	std::vector<POINT> tileKeys;
+    bool dragging=false;
+    int dragX=0,dragY=0;
+    DWORD lastMapInput=0;
+    float map_scale{ 1.0f };
 	bool follow_player{ true };
 };

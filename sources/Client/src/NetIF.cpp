@@ -198,6 +198,7 @@ BOOL NetIF::HandlePacketMessage(DataSocket *datasock,LPRPACKET pk)
 	case CMD_MC_SEND_SERVER_PUBLIC_KEY: return SC_SendPublicKey(pk);
 	case CMD_MC_SEND_HANDSHAKE: return SC_SendHandshake(pk);
 	case CMD_MC_PREMOVE_TIME:	return SC_PreMoveTime(pk);
+	case CMD_MC_MAP_POI: return SC_MapPOI(pk);
 	case CMD_MC_MAP_MASK:	return SC_MapMask(pk);
 
 	case CMD_MC_UPDATEHAIR_RES: return SC_UpdateHairRes(pk);

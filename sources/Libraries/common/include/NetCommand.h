@@ -903,3 +903,7 @@
 // Ga(t)eServer <-> (C)lient 
 #define CMD_TC_DISCONNECT CMD_TC_BASE + 2
 
+
+// World-map marker protocol v1 (explicit fixed-width payload).
+#define CMD_CM_MAP_POI (CMD_CM_BASE + 125)
+#define CMD_MC_MAP_POI (CMD_MC_BASE + 125)

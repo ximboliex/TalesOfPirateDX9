@@ -504,6 +504,7 @@ bool CCharacter::IsPKSilver()
 
 void CCharacter::OnBeginSeen(CCharacter *pCCha)
 {T_B
+    if (GetSubMap()) GetSubMap()->MapPOIs().Observe(pCCha, this);
 	if (!pCCha->IsPlayerCha()) // 该角色不属于玩家
 		return;
 

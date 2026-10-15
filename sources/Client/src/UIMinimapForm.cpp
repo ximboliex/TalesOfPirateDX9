@@ -25,6 +25,9 @@
 #include "AreaRecord.h"//add by sunny.sun 20080903
 #include "MonsterSet.h" //add by mdr
 #include <shellapi.h>
+#include "UIRender.h"
+#include "UIList.h"
+#include <cmath>
 #include "ProCirculate.h"
 #include "uiBoatForm.h"
 using namespace std;
@@ -159,8 +162,50 @@ bool CMiniMapMgr::Init()
 	if (DBufImageType = dynamic_cast<CImage*>(DailyBuffFrm->Find("DBufImageType")); !DBufImageType)return Error(g_oLangRec.GetString(45), DailyBuffFrm->GetName(), "DBufImageType");
 
 	//------------------------Daily buff end ----------------------------------------//
-	return true;	
-	
+    // The first component paints the frame; later controls remain above it.
+    if(auto background=dynamic_cast<C3DCompent*>(frmBigmap->Find("d3dMapBackdrop"));background)
+        background->SetRenderEvent([](C3DCompent* component,int,int) {
+            const int x=component->GetX(),y=component->GetY();
+            GetRender().FillFrame(x,y,x+component->GetWidth(),y+component->GetHeight(),0xf2192433);
+            GetRender().FillFrame(x+10,y+48,x+188,y+component->GetHeight()-12,0xff111b29);
+            GetRender().LineThinFrame(x,y,x+component->GetWidth(),y+component->GetHeight(),0xff697d98);
+            for(const auto& button:{RECT{544,17,610,39},RECT{622,17,646,39},RECT{652,17,676,39},RECT{700,17,722,39}})
+                GetRender().FillFrame(x+button.left,y+button.top,x+button.right,y+button.bottom,0xff344963);
+        });
+    markerList=dynamic_cast<CList*>(frmBigmap->Find("lstMapPOI"));
+    if(markerList) {
+        markerList->SetFontColor(0xffd8e2ef);markerList->SetSelectColor(0xffffd178);
+        markerList->SetRowHeight(20);markerList->SetMargin(3,3,12,3);
+        markerList->evtSelectChange=[](CGuiData*) {
+            auto& ui=g_stUIMap;
+            if(!ui.markerList || !ui.markerList->GetItems()->GetSelect())return;
+            const int index=ui.markerList->GetItems()->GetSelect()->GetIndex();
+            if(index<0 || std::size_t(index)>=ui.markerRows.size())return;
+            ui.selectedMarker=ui.markerRows[index];
+            auto point=ui.mapMarkers.points.find(ui.selectedMarker);
+            auto* scene=CGameApp::GetCurScene();
+            if(point!=ui.mapMarkers.points.end() && scene && scene->GetLargerMap()) {
+                scene->GetLargerMap()->SetFollow(false);
+                scene->GetLargerMap()->Update(point->second.x,point->second.y);
+            }
+        };
+    }
+    const char* filterNames[]={"chkBossPOI","chkMiniPOI","chkChestPOI","chkPortalPOI"};
+    for(int i=0;i<4;++i) {
+        markerFilters[i]=dynamic_cast<CCheckBox*>(frmBigmap->Find(filterNames[i]));
+        if(markerFilters[i])markerFilters[i]->SetIsChecked(true);
+    }
+    markerName=dynamic_cast<CLabelEx*>(frmBigmap->Find("labPOIName"));
+    markerState=dynamic_cast<CLabelEx*>(frmBigmap->Find("labPOIState"));
+    if(auto center=dynamic_cast<CTextButton*>(frmBigmap->Find("btnPOICenter"));center)
+        center->evtMouseClick=[](CGuiData*,int,int,DWORD) {
+            auto* scene=CGameApp::GetCurScene();
+            if(scene && scene->GetMainCha() && scene->GetLargerMap()) {
+                auto* map=scene->GetLargerMap();map->SetFollow(true);
+                map->Update(scene->GetMainCha()->GetCurX(),scene->GetMainCha()->GetCurY());
+            }
+        };
+	return true;
 }
 
 
@@ -186,6 +231,16 @@ void CMiniMapMgr::End()
 
 void CMiniMapMgr::FrameMove(DWORD dwTime)
 {
+    auto* scene=CGameApp::GetCurScene();
+    if(scene && scene->GetMainCha()) {
+        const std::string name=scene->GetTerrainName();
+        if(mapMarkers.map!=name) {mapMarkers.Reset(name);selectedMarker=0;nextMarkerPoll=0;}
+        if(nextMarkerPoll==0 || static_cast<LONG>(dwTime-nextMarkerPoll)>=0) {
+            CS_MapPOI(mapMarkers.context,mapMarkers.epoch,mapMarkers.revision);
+            nextMarkerPoll=dwTime+2000;
+        }
+    }
+    RefreshMarkerList();
 	static CTimeWork time(1000);
 	if (time.IsTimeOut(dwTime))
 	{
@@ -198,8 +253,8 @@ void CMiniMapMgr::_evtShowbigmap(CGuiData *pSender)
 	CWorldScene* pWorldScene = dynamic_cast<CWorldScene*>(CGameApp::GetCurScene());
 	if (!pWorldScene) return;
 
-	g_pGameApp->Waiting();
-	CS_MapMask();
+    if (auto* map=pWorldScene->GetLargerMap();map) map->Show(true);
+    g_stUIMap.nextMarkerPoll=0;
 
 	// Э�鷢�ͻ���ʱ������ʾ
 	//if( CGameApp::GetCurScene() && CGameApp::GetCurScene()->GetLargerMap() )
@@ -223,7 +278,9 @@ void CMiniMapMgr::_RenderBigmapEvent(C3DCompent *pSender, int x, int y)
 {
 	if( CGameApp::GetCurScene() && CGameApp::GetCurScene()->GetLargerMap() )
 	{
-		CGameApp::GetCurScene()->GetLargerMap()->Render();
+        auto* map=CGameApp::GetCurScene()->GetLargerMap();
+        const RECT bounds{pSender->GetX(),pSender->GetY(),pSender->GetX2(),pSender->GetY2()};
+        map->SyncViewport(bounds);map->Render();
 	}
 
     if( g_stUIMap.GetBigmapForm() && g_stUIMap.GetBigmapRect())
@@ -576,6 +633,7 @@ void CMiniMapMgr::ShowRadar()
 
 void CMiniMapMgr::SwitchMap()
 {
+    mapMarkers.Reset("");selectedMarker=0;nextMarkerPoll=0;
 	frmBigmap->Close();
 }
 
@@ -621,335 +679,112 @@ bool CMiniMapMgr::IsGuildWar()
 //Begin
 void CMiniMapMgr::_RenderBigMapHint(void)
 {
-	//FontModule::Font* pfont = g_pGameApp->GetFont();
-	//CMPFont				g_CFont
-	if(/*!pfont ||*/ !CGameApp::GetCurScene() || !CGameApp::GetCurScene()->GetLargerMap()) return;
+    auto* scene=CGameApp::GetCurScene();if(!scene || !scene->GetLargerMap() || !scene->GetTerrain())return;
+    const auto projection=scene->GetLargerMap()->GetProjection();
+    const int sx=g_pGameApp->GetMouseX(),sy=g_pGameApp->GetMouseY();
+    if(!projection.Contains(sx,sy))return;
+    double x,y;if(!projection.World(sx,sy,x,y))return;
+    if(x<0 || y<0 || x>=scene->GetTerrain()->GetWidth()*100 || y>=scene->GetTerrain()->GetHeight()*100)return;
+    mouse_map_coordinate={LONG(x/100),LONG(y/100)};
+}
 
-    POINT ptMouse;  // ������꣨�������꣩
-    GetCursorPos(&ptMouse);
-    ScreenToClient(g_pGameApp->GetHWND(), &ptMouse);
-
-    RECT rcBigMap;  // ���ͼ���Σ��������꣩
-    rcBigMap.left   = GetBigmapForm()->GetLeft() + GetBigmapRect()->GetLeft();
-    rcBigMap.top    = GetBigmapForm()->GetTop()  + GetBigmapRect()->GetTop();
-    rcBigMap.right  = rcBigMap.left + GetBigmapRect()->GetWidth();
-    rcBigMap.bottom = rcBigMap.top  + GetBigmapRect()->GetHeight();
-
-    POINT ptBigMapCenter;   // ���ͼ�������꣨�������꣩
-    ptBigMapCenter.x = (rcBigMap.right  - rcBigMap.left) >> 1;
-    ptBigMapCenter.y = (rcBigMap.bottom - rcBigMap.top)  >> 1;
-
-    POINT ptCenter; // ���ͼ�������꣨��Ϸ���꣩
-    ptCenter.x = CGameApp::GetCurScene()->GetLargerMap()->GetCenterX() / 100;
-    ptCenter.y = CGameApp::GetCurScene()->GetLargerMap()->GetCenterY() / 100;
-
-	constexpr auto MAP_SCALE = 1.25f;   // ���ͼ���ر�����һ���Ʋ�� magic number  :)
-	const auto map_scale_modifier = CGameApp::GetCurScene()->GetLargerMap()->GetScale();
-
-    // �������ǺͲ���վ���үҪ��
-    if(0 == stricmp(CGameApp::GetCurScene()->GetTerrainName(), "garner") 
-		||0 == stricmp(CGameApp::GetCurScene()->GetTerrainName(), "magicsea")
-		||0 == stricmp(CGameApp::GetCurScene()->GetTerrainName(), "darkblue"))
-    {
-        struct SApplyInfo
-        {
-            int nAreaID;    // ��Ӧ AreaSet ����� ID
-            int x, y;
-        };
-
-	SApplyInfo stApply[8];
-
-   //     static SApplyInfo stApply[] = 
-   //     {
-			//{	1,	2218,	2759	},	//������				
-			//{	55,	1891,	2800	},	//�Ͽ󲹸�վ			
-			//{	58,	1509,	3093	},	//���￩������վ		
-			//{	53,	1002,	2972	},	//����ɭ�ֲ���վ		
-			//{	61,	1114,	2773	},	//�߶�ŵ����վ		
-			//{	63,	526,	2440	},	//���ò���վ			
-			//{	8,	736,	1511	},	//������				
-			//{	13,	855,	3568	},	//ɳ��³�			
-			//{	57,	781,	3118	},	//ɳȪ����վ			
-			//{	62,	1204,	3204	},	//�Ͳ�����վ			
-			//{	20,	1319,	521		},	//���Ǳ��³�			
-			//{	56,	794,	353		},	//��������վ			
-			//{	59,	1048,	648		},	//������˹����վ		
-			//{	60,	2137,	551		},	//����Ӫ�ز���վ
-			//{	54,	611,	2097	},	//�����ӵ²���վ
-   //     };
-
-		if(0 == stricmp(CGameApp::GetCurScene()->GetTerrainName(), "garner"))
-		{
-			stApply[0].nAreaID = 1;
-			stApply[0].x = 2218;
-			stApply[0].y = 2759;
-
-			stApply[1].nAreaID = 55;
-			stApply[1].x = 1891;
-			stApply[1].y = 2800;
-
-			stApply[2].nAreaID = 58;
-			stApply[2].x = 1509;
-			stApply[2].y = 3093;
-
-			stApply[3].nAreaID = 53;
-			stApply[3].x = 1002;
-			stApply[3].y = 2972;
-
-			stApply[4].nAreaID = 61;
-			stApply[4].x = 1114;
-			stApply[4].y = 2773;
-
-			stApply[5].nAreaID = 63;
-			stApply[5].x = 526;
-			stApply[5].y = 2440;
-
-			stApply[6].nAreaID = 8;
-			stApply[6].x = 736;
-			stApply[6].y = 1511;
-
-			stApply[7].nAreaID = 54;
-			stApply[7].x = 611;
-			stApply[7].y = 2097;
-		}
-		if(0 == stricmp(CGameApp::GetCurScene()->GetTerrainName(), "magicsea"))
-		{
-			stApply[0].nAreaID = 57;
-			stApply[0].x = 781;
-			stApply[0].y = 3118;
-			
-			stApply[1].nAreaID = 13;
-			stApply[1].x = 855;
-			stApply[1].y = 3568;
-
-			stApply[2].nAreaID = 62;
-			stApply[2].x = 1204;
-			stApply[2].y = 3204;
-			
-			stApply[3].nAreaID = 0;
-			stApply[3].x = 0;
-			stApply[3].y = 0;
-
-			stApply[4].nAreaID = 0;
-			stApply[4].x = 0;
-			stApply[4].y = 0;
-
-			stApply[5].nAreaID = 0;
-			stApply[5].x = 0;
-			stApply[5].y = 0;
-
-			stApply[6].nAreaID = 0;
-			stApply[6].x = 0;
-			stApply[6].y = 0;
-
-			stApply[7].nAreaID = 0;
-			stApply[7].x = 0;
-			stApply[7].y = 0;
-
-		}
-		if(0 == stricmp(CGameApp::GetCurScene()->GetTerrainName(), "darkblue"))
-		{	
-			stApply[0].nAreaID = 20;
-			stApply[0].x = 1319;
-			stApply[0].y = 521;
-			
-			stApply[1].nAreaID = 56;
-			stApply[1].x = 794;
-			stApply[1].y = 353;
-
-			stApply[2].nAreaID = 59;
-			stApply[2].x = 1048;
-			stApply[2].y = 648;
-
-			stApply[3].nAreaID = 60;
-			stApply[3].x = 2137;
-			stApply[3].y = 551;
-
-			stApply[4].nAreaID = 0;
-			stApply[4].x = 0;
-			stApply[4].y = 0;
-
-			stApply[5].nAreaID = 0;
-			stApply[5].x = 0;
-			stApply[5].y = 0;
-
-			stApply[6].nAreaID = 0;
-			stApply[6].x = 0;
-			stApply[6].y = 0;
-
-			stApply[7].nAreaID = 0;
-			stApply[7].x = 0;
-			stApply[7].y = 0;
-		}
-
-        RECT rcBigMapArea;  // ���ͼ������Ϸ���꣩
-		rcBigMapArea.left   = ptCenter.x - ((int)((rcBigMap.right - rcBigMap.left) * MAP_SCALE * map_scale_modifier) >> 1);
-		rcBigMapArea.right  = ptCenter.x + ((int)((rcBigMap.right - rcBigMap.left) * MAP_SCALE * map_scale_modifier) >> 1);
-		rcBigMapArea.top    = ptCenter.y - ((int)((rcBigMap.bottom - rcBigMap.top) * MAP_SCALE * map_scale_modifier) >> 1);
-		rcBigMapArea.bottom = ptCenter.y + ((int)((rcBigMap.bottom - rcBigMap.top) * MAP_SCALE * map_scale_modifier) >> 1);
-
-        int nCount = sizeof(stApply) / sizeof(stApply[0]);
-        for(int i = 0; i < nCount; ++i)
-        {
-            if(rcBigMapArea.left < stApply[i].x && stApply[i].x < rcBigMapArea.right &&
-                rcBigMapArea.top < stApply[i].y && stApply[i].y < rcBigMapArea.bottom)
-            {
-                CAreaInfo* pInfo = GetAreaInfo(stApply[i].nAreaID);
-                if(! pInfo) continue;
-
-                POINT ptRender; // ���� ����վ�����꣨��Ϸ����->��Ļ���꣩
-                ptRender.x = rcBigMap.left + (LONG)((stApply[i].x - rcBigMapArea.left) / MAP_SCALE);
-                ptRender.y = rcBigMap.top  +(LONG)((stApply[i].y - rcBigMapArea.top)  / MAP_SCALE);
-
-                //SIZE size;    // ����������ĵ�ƫ��
-                //pfont->GetTextSize(pInfo->szDataName, &size);
-                //ptRender.x -= size.cx >> 1;
-                //ptRender.y -= size.cy >> 1;
-
-               g_pGameApp->GetFont()->DrawText(pInfo->szDataName, ptRender.x, ptRender.y);
-            }
+void CMiniMapMgr::RefreshMarkerList()
+{
+    unsigned filters=0;
+    for(int i=0;i<4;++i)if(!markerFilters[i] || markerFilters[i]->GetIsChecked())filters|=1u<<i;
+    if(markerList && (listEpoch!=mapMarkers.epoch || listRevision!=mapMarkers.revision ||
+       listContext!=mapMarkers.context || listFilters!=filters)) {
+        markerList->Clear();markerRows.clear();
+        for(const auto& pair:mapMarkers.points) {
+            const auto& point=pair.second;
+            if(!(filters & (1u<<(int(point.kind)-1))))continue;
+            const auto name=point.name.substr(0,20);
+            markerList->Add(name.c_str());markerRows.push_back(point.id);
         }
+        markerList->Refresh();
+        listEpoch=mapMarkers.epoch;listRevision=mapMarkers.revision;listContext=mapMarkers.context;listFilters=filters;
     }
-
-
-    // ���������ڴ��ͼ�����ڣ��������ʾ
-    if(rcBigMap.left < ptMouse.x && ptMouse.x < rcBigMap.right &&
-        rcBigMap.top < ptMouse.y && ptMouse.y < rcBigMap.bottom)
-    {
-		mouse_map_coordinate.x = ptCenter.x + (int)((ptMouse.x - ptBigMapCenter.x - rcBigMap.left) * MAP_SCALE / map_scale_modifier);
-		mouse_map_coordinate.y = ptCenter.y + (int)((ptMouse.y - ptBigMapCenter.y - rcBigMap.top) * MAP_SCALE / map_scale_modifier);
-		if (mouse_map_coordinate.x < 0 || mouse_map_coordinate.x > defMAP_GARNER_WIDTH ||
-			mouse_map_coordinate.y < 0 || mouse_map_coordinate.y > defMAP_GARNER_WIDTH)
-		{
-			return;
-		}
-/* Removed by Mdr May 2020 FPO Beta
-        char szBuf[256] = {0};
-        sprintf(szBuf, " Point: %d, %d ", ptCurMouse.x, ptCurMouse.y);
-
-        SIZE size;
-        g_pGameApp->GetFont()->GetTextSize(szBuf, &size);
-
-        GetRender().FillFrame(ptMouse.x + 32, ptMouse.y, ptMouse.x + 32 + size.cx, ptMouse.y + size.cy);
-       g_pGameApp->GetFont()->DrawText(szBuf, ptMouse.x + 32, ptMouse.y);
-
-*/
- 		CMonsterInfo* pInfo = 0;
-        int nID = 1;
-        for(;;)
-        {
-            pInfo = GetMonsterInfo(nID++);
-            if(! pInfo)
-            {
-                break;
-            }
-
-            if( pInfo->ptStart.x < mouse_map_coordinate.x && mouse_map_coordinate.x < pInfo->ptEnd.x &&
-                pInfo->ptStart.y < mouse_map_coordinate.y && mouse_map_coordinate.y < pInfo->ptEnd.y ) // && 0 == strcmp(CGameApp::GetCurScene()->GetTerrainName(), pInfo->szArea)
-            {
-                break;
-            }
-        }
-
-        if(pInfo)
-        {
-            RECT rcMonster; // ˢ�ַ�Χ����Ϸ���꣩
-            SetRect(&rcMonster, pInfo->ptStart.x, pInfo->ptStart.y, 
-                                pInfo->ptEnd.x,   pInfo->ptEnd.y);
-
-            // �������飨��Ϸ����->��Ļ���꣩
-            rcMonster.left   = rcBigMap.left + ptBigMapCenter.x + (int)((rcMonster.left   - ptCenter.x) / MAP_SCALE);
-            rcMonster.top    = rcBigMap.top  + ptBigMapCenter.y + (int)((rcMonster.top    - ptCenter.y) / MAP_SCALE);
-            rcMonster.right  = rcBigMap.left + ptBigMapCenter.x + (int)((rcMonster.right  - ptCenter.x) / MAP_SCALE);
-            rcMonster.bottom = rcBigMap.top  + ptBigMapCenter.y + (int)((rcMonster.bottom - ptCenter.y) / MAP_SCALE);
-
-            // ������Χ�ü�
-            if(rcMonster.left   < rcBigMap.left  ) rcMonster.left   = rcBigMap.left;
-            if(rcMonster.top    < rcBigMap.top   ) rcMonster.top    = rcBigMap.top;
-            if(rcMonster.right  > rcBigMap.right ) rcMonster.right  = rcBigMap.right;
-            if(rcMonster.bottom > rcBigMap.bottom) rcMonster.bottom = rcBigMap.bottom;
-
-           // ��ø����������Ϣ
-            CChaRecord* pMonsterInfo[MONSTER_LIST_MAX] = {0};
-            string      strMonsterName[MONSTER_LIST_MAX];
-            int         nMonCount = 0;
-            int         nLevelSum = 0;
-            SIZE        sizeNameMax = {0};
-            for(int i = 0; i < MONSTER_LIST_MAX; ++i)
-            {
-                if(0 == pInfo->nMonsterList[i]) break;
-
-                pMonsterInfo[i] = GetChaRecordInfo(pInfo->nMonsterList[i]);
-                if(! pMonsterInfo[i]) continue;
-
-                nLevelSum += pMonsterInfo[i]->lLv;
-                nMonCount++;
-
-                char szBuf[256] = {0};
-                sprintf( szBuf, " %d. %s   LV:%2d ", nMonCount, pMonsterInfo[i]->szName, pMonsterInfo[i]->lLv);
-                strMonsterName[i] = szBuf;
-
-                SIZE size;
-                g_pGameApp->GetFont()->GetTextSize(szBuf, &size);
-                if(size.cx > sizeNameMax.cx) sizeNameMax.cx = size.cx;
-            	 if(size.cy > sizeNameMax.cy) sizeNameMax.cy = size.cy;
-            }
-
-            if(nMonCount > 0)
-            {
-                //	int nLevelCha = g_pGameApp->GetCurScene()->GetMainCha()->getGameAttr()->get(ATTR_LV);
-				int nLevelCha = (int)g_pGameApp->GetCurScene()->GetMainCha()->getGameAttr()->get(ATTR_LV);
-                int nLevelAvg = nLevelSum / nMonCount;  // ������ֵ�ƽ���ȼ�
-
-                DWORD dwAreaColor = 0;
-                if     (nLevelAvg > nLevelCha + 15) dwAreaColor = 0x00FF0000;
-                else if(nLevelAvg > nLevelCha +  5) dwAreaColor = 0x00FFFF00;
-                else if(nLevelAvg > nLevelCha -  5) dwAreaColor = 0x0000FF00;
-                else if(nLevelAvg > nLevelCha - 15) dwAreaColor = 0x0000CCFF;
-                else                                dwAreaColor = 0x00666666;
-
-                BYTE byAlpha = 0x80;
-                dwAreaColor &= 0x00FFFFFF;
-                dwAreaColor |= (byAlpha << 24);
-
-                GetRender().FillFrame(rcMonster.left, rcMonster.top, rcMonster.right, rcMonster.bottom, dwAreaColor);
-
-				// �����б�
-                RECT rcRender = rcBigMap;
-                GetRender().FillFrame(rcBigMap.left, rcRender.top, rcRender.left + sizeNameMax.cx, rcRender.top + (sizeNameMax.cy *nMonCount)); //*nMonCount
-                for(int i = 0; i < nMonCount; ++i)
-                {
-                   g_pGameApp->GetFont()->DrawText(const_cast<char*>(strMonsterName[i].c_str()), rcRender.left + 35, rcRender.top + 50);
-                   rcRender.top += sizeNameMax.cy;
-                }
-            }
-        }
-
-//        // �������ָ�������
-        char szBuf[256] = {0};
-       sprintf( szBuf," Point: %d, %d ", mouse_map_coordinate.x, mouse_map_coordinate.y);
-
-        SIZE size;
-        g_pGameApp->GetFont()->GetTextSize(szBuf, &size);
-
-        GetRender().FillFrame(ptMouse.x + 32, ptMouse.y, ptMouse.x + 32 + size.cx, ptMouse.y + size.cy);
-       g_pGameApp->GetFont()->DrawText(szBuf, ptMouse.x + 32, ptMouse.y);
-
-
-
-
-
-
-
-
+    auto selected=mapMarkers.points.find(selectedMarker);
+    if(selected==mapMarkers.points.end()) {
+        if(markerName)markerName->SetCaption("Selecciona un punto");
+        if(markerState)markerState->SetCaption("Solo puntos conocidos");
+    } else {
+        const auto& p=selected->second;
+        if(markerName)markerName->SetCaption(p.name.substr(0,23).c_str());
+        char text[96];std::snprintf(text,sizeof(text),"%s  %d,%d",p.state==map_poi::State::Active?"Disponible":"Inactivo",p.x/100,p.y/100);
+        if(markerState)markerState->SetCaption(text);
     }
 }
-//End
-void CMiniMapMgr::_evtShowNPCList(CGuiData *pSender,int x,int y ,DWORD key)
+
+void CMiniMapMgr::RenderMapMarkers(const map_poi::Projection& projection,bool minimap)
 {
-	
-	CForm* f = CFormMgr::s_Mgr.Find( "frmNpcShow" );
-	bool b = !f->GetIsShow();
-	g_stUIStart.ShowNPCHelper(g_stUIStart.GetCurrMapName(),b);
-	
+    struct Vertex {float x,y,z,w;DWORD color;};
+    std::vector<Vertex> triangles;triangles.reserve(mapMarkers.points.size()*18);
+    auto triangle=[&](double ax,double ay,double bx,double by,double cx,double cy,DWORD color) {
+        for(const auto& p:{std::make_pair(ax,ay),std::make_pair(bx,by),std::make_pair(cx,cy)})
+            triangles.push_back({float(p.first),float(p.second),0.9f,1.0f,color});
+    };
+    auto quad=[&](double l,double t,double r,double b,DWORD color) {
+        triangle(l,t,r,t,r,b,color);triangle(l,t,r,b,l,b,color);
+    };
+    const int mx=g_pGameApp->GetMouseX(),my=g_pGameApp->GetMouseY();
+    const map_poi::Marker* hovered=nullptr;double closest=100;
+    for(const auto& pair:mapMarkers.points) {
+        const auto& p=pair.second;const int kind=int(p.kind);
+        if(minimap && !map_poi::Public(p.kind))continue;
+        if(kind<1 || kind>4 || (markerFilters[kind-1] && !markerFilters[kind-1]->GetIsChecked()))continue;
+        double sx,sy;projection.Screen(p.x,p.y,sx,sy);
+        const double size=minimap?5:7;
+        if(!projection.Contains(sx,sy,size+2))continue;
+        DWORD color=p.state!=map_poi::State::Active?0xff8490a0:
+            p.kind==map_poi::Kind::Boss?0xffff5c61:p.kind==map_poi::Kind::MiniBoss?0xffffac4a:
+            p.kind==map_poi::Kind::Chest?0xffffd56b:0xffb69aff;
+        if(!minimap && p.id==selectedMarker)quad(sx-size-2,sy-size-2,sx+size+2,sy+size+2,0xfff1f6ff);
+        quad(sx-size-1,sy-size-1,sx+size+1,sy+size+1,0xff172131);
+        if(p.kind==map_poi::Kind::Boss) {
+            triangle(sx,sy-size,sx+size,sy,sx,sy+size,color);
+            triangle(sx,sy-size,sx,sy+size,sx-size,sy,color);
+        } else if(p.kind==map_poi::Kind::MiniBoss)triangle(sx,sy-size,sx+size,sy+size,sx-size,sy+size,color);
+        else if(p.kind==map_poi::Kind::Chest) {
+            quad(sx-size,sy-size+2,sx+size,sy+size-1,color);
+            quad(sx-1,sy-size+2,sx+1,sy+size-1,0xff805a23);
+        } else {
+            constexpr double pi=3.141592653589793;
+            for(int i=0;i<12;++i) {
+                const double a=i*pi/6,b=(i+1)*pi/6;
+                triangle(sx+std::cos(a)*size,sy+std::sin(a)*size,sx+std::cos(b)*size,sy+std::sin(b)*size,
+                    sx+std::cos(a)*(size-2),sy+std::sin(a)*(size-2),color);
+                triangle(sx+std::cos(b)*size,sy+std::sin(b)*size,sx+std::cos(b)*(size-2),sy+std::sin(b)*(size-2),
+                    sx+std::cos(a)*(size-2),sy+std::sin(a)*(size-2),color);
+            }
+        }
+        const double d=(mx-sx)*(mx-sx)+(my-sy)*(my-sy);
+        if(!minimap && d<closest){closest=d;hovered=&p;}
+    }
+    if(!triangles.empty()) {
+        g_Render.SetTexture(0,nullptr);g_Render.SetVertexShader(nullptr);
+        g_Render.SetFVF(D3DFVF_XYZRHW|D3DFVF_DIFFUSE);
+        g_Render.SetRenderState(D3DRS_ZENABLE,FALSE);g_Render.SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
+        g_Render.SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
+        g_Render.SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_DIFFUSE);
+        g_Render.SetTextureStageState(0,D3DTSS_COLOROP,D3DTOP_SELECTARG1);
+        g_Render.SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_DIFFUSE);
+        g_Render.SetTextureStageState(0,D3DTSS_ALPHAOP,D3DTOP_SELECTARG1);
+        g_Render.GetDevice()->DrawPrimitiveUP(D3DPT_TRIANGLELIST,UINT(triangles.size()/3),triangles.data(),sizeof(Vertex));
+        g_Render.SetTextureStageState(0,D3DTSS_COLOROP,D3DTOP_MODULATE);
+        g_Render.SetTextureStageState(0,D3DTSS_COLORARG1,D3DTA_TEXTURE);
+        g_Render.SetTextureStageState(0,D3DTSS_COLORARG2,D3DTA_DIFFUSE);
+        g_Render.SetTextureStageState(0,D3DTSS_ALPHAOP,D3DTOP_MODULATE);
+        g_Render.SetTextureStageState(0,D3DTSS_ALPHAARG1,D3DTA_TEXTURE);
+        g_Render.SetTextureStageState(0,D3DTSS_ALPHAARG2,D3DTA_DIFFUSE);
+    }
+    if(hovered) {
+        if(g_pGameApp->GetMouseKey() & M_LDown)selectedMarker=hovered->id;
+        char hint[128];std::snprintf(hint,sizeof(hint),"%s [%d,%d] - %s",hovered->name.c_str(),hovered->x/100,hovered->y/100,
+            hovered->state==map_poi::State::Active?"Disponible":"Inactivo");
+        if(auto* font=g_pGameApp->GetFont();font) {
+            const int x=int(projection.left)+12,y=int(projection.top+projection.height)-22;
+            font->DrawTextShadow(hint,x,y,x+1,y+1,0xff0c1220,0xffffffff);
+        }
+    }
 }

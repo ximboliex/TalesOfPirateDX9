@@ -846,6 +846,19 @@ void CCharacter::ProcessPacket(unsigned short usCmd, RPACKET pk)
 			Guild::cmd_GuildLeizhu( GetPlyMainCha(), byLevel, dwMoney );
 		}
 		break;
+    case CMD_CM_MAP_POI:
+    {
+        if (!GetSubMap() || !GetPlayer() || !IsPlayerFocusCha() || pk.RemainData() != 17) break;
+        if (READ_CHAR(pk) != map_poi::Version) break;
+        const auto now=GetTickCount64();
+        if(now<GetPlayer()->nextMapPOIRequest) break;
+        GetPlayer()->nextMapPOIRequest=now+1000;
+        const auto context=READ_LONG(pk);
+        const auto epoch=static_cast<unsigned long long>(pk.ReadLongLong());
+        const auto revision=READ_LONG(pk);
+        GetSubMap()->MapPOIs().Send(this,context,epoch,revision);
+        break;
+    }
 	case CMD_CM_MAP_MASK:
 		{
 			if (!GetSubMap())

@@ -153,3 +153,6 @@ DatabasePath/GameDtopnet64_log.ldf
 # Isolated server x64 build and external SDKs
 sources/out/server/
 dependencies/server-x64/
+
+# Shared world-map discovery state is generated per deployment.
+server/GameServer/resource/map_poi_discoveries/

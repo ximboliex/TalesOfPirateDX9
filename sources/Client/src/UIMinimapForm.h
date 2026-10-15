@@ -3,8 +3,10 @@
 #include "UILabel.h"
 #include "FindPath.h"
 #include "UICheckBox.h"
+#include "MapPOI.h"
 namespace GUI
 {
+class CList;
 // С��ͼ
 class CMiniMapMgr : public CUIInterface
 {
@@ -41,7 +43,9 @@ public:
 
 	CLabelEx*		GetLabMapPos(){return labMapPos;}
 	static void	ShowRadar(const char * szX,const char * szY);
-	void SetupDailyBuffForm(const char* img, const char*labelInfo);
+	void RenderMapMarkers(const map_poi::Projection& projection, bool minimap);
+    map_poi::ClientStore& MapMarkers() { return mapMarkers; }
+    void SetupDailyBuffForm(const char* img, const char*labelInfo);
 protected:
 	virtual bool Init();
     virtual void End();
@@ -99,7 +103,19 @@ private:
 	static CCombo*		cboAddr;
 	//CMPFont				g_CFont;
 
-	POINT mouse_map_coordinate{};
+	CList* markerList{};
+    std::vector<std::uint64_t> markerRows;
+    std::uint64_t listEpoch=0;
+    std::uint32_t listRevision=0, listContext=0;
+    unsigned listFilters=0;
+    void RefreshMarkerList();
+    map_poi::ClientStore mapMarkers;
+    CCheckBox* markerFilters[4]{};
+    CLabelEx* markerName{};
+    CLabelEx* markerState{};
+    std::uint64_t selectedMarker=0;
+    DWORD nextMarkerPoll=0;
+    POINT mouse_map_coordinate{};
 	time_t tServerTime;
 	//daily buff preview form and labels , images @mothannakh 
 	CForm* DailyBuffFrm{nullptr}; //main form

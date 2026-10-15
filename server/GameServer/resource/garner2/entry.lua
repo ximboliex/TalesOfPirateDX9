@@ -7,7 +7,7 @@ function after_create_entry(entry)
     local EntryName		= "Chaos Argent"
     SetMapEntryEventName( entry, EntryName )
     map_name, posx, posy, tmap_name = GetMapEntryPosInfo(entry)
-    Notice("Announcement: Portal to Chaos Argent has opened at ["..posx..","..posy.."] Argent City!")
+    Notice("A portal has opened. Explore to discover its location on the world map.")
 end
 
 function after_destroy_entry_garner2(entry)
@@ -17,7 +17,7 @@ end
 
 function after_player_login_garner2(entry, player_name)
     map_name, posx, posy, tmap_name = GetMapEntryPosInfo(entry)
-	ChaNotice(player_name, "Announcement: Portal to Chaos Argent has opened at ["..posx..","..posy.."] Argent City!")
+	ChaNotice(player_name, "A portal has opened. Explore to discover its location on the world map.")
 end
 
 function check_can_enter_garner2(role, copy_mgr)

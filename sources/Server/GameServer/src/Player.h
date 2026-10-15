@@ -41,6 +41,7 @@ class CPlayer : public GatePlayer, public mission::CCharMission
 {
 public:
 	CPlayer();
+    unsigned long long nextMapPOIRequest = 0;
     ~CPlayer() { dbc::ForgetAddress(this); }
 
 	void Init(GateServer *pGate, dbc::uLong ulGtAddr)

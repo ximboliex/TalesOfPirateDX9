@@ -47,6 +47,7 @@ T_E}
 
 void CItem::OnBeginSeen(CCharacter *pCMainCha)
 {T_B
+    if (GetSubMap()) GetSubMap()->MapPOIs().Observe(pCMainCha, this);
 	WPACKET pk =GETWPACKET();
 	WRITE_CMD(pk, CMD_MC_ITEMBEGINSEE);
 	// 基本数据

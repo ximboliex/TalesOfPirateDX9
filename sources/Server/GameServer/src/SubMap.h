@@ -18,6 +18,7 @@
 #include "Weather.h"
 #include "GameApp.h"
 #include "MapRes.h"
+#include "MapPOIService.h"
 
 #define defRANGE_MGRUNIU_NUM	10000
 
@@ -82,6 +83,7 @@ class SubMap
 {
 public:
 	SubMap();
+    MapPOIService& MapPOIs() { return m_mapPOIs; }
 	virtual ~SubMap();
 
 	bool	Init(CMapRes *pCMapRes, dbc::Short sCopyNO = 0);
@@ -338,7 +340,8 @@ public:
 
 	CEyeshotCell	**m_pCEyeshotCell; // 视野单元
 	CStateCell		***m_pCStateCell; // 状态单元
-	unsigned long long m_ullRuntimeGeneration = 1;
+	MapPOIService m_mapPOIs{this};
+    unsigned long long m_ullRuntimeGeneration = 1;
 	COutMapCha		m_COutMapCha; // 地图外角色
 	//供随机访问的地图信息数组
 	CActEyeshotCell	m_CEyeshotCellL;	// 激活的视野单元列表

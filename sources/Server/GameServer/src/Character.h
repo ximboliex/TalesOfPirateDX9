@@ -266,7 +266,8 @@ public:
 	// ��ֻ
 	void	SetBoat( CCharacter* pBoat );
 	CCharacter* GetBoat();
-	bool	IsBoat(void) {return m_pCChaRecord->chModalType == enumMODAL_BOAT;}
+	unsigned long GetMapPOITemplateID() const { return m_pCChaRecord ? m_pCChaRecord->lID : 0; }
+    bool	IsBoat(void) {return m_pCChaRecord->chModalType == enumMODAL_BOAT;}
 	
 	// ��npc����
 	BOOL	SafeSale( BYTE byIndex, BYTE byCount, WORD& wItemID, DWORD& dwMoney );

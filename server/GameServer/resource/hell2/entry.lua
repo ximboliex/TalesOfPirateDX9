@@ -5,7 +5,7 @@ function after_create_entry(entry)
  local copy_mgr = GetMapEntryCopyObj(entry, 0)
  SetMapEntryEventName(entry, "Abaddon 9")
  map_name, posx, posy, tmap_name = GetMapEntryPosInfo(entry)
- Notice("Announcement: In the depths of Abaddon 8["..posx..","..posy.."] opens the portal that leads to Abaddon 9!")
+ Notice("A portal has opened. Explore to discover its location on the world map.")
 end
 function after_destroy_entry_hell2(entry)
  map_name, posx, posy, tmap_name = GetMapEntryPosInfo(entry) 

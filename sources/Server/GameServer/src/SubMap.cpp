@@ -45,6 +45,7 @@ SubMap::~SubMap()
 bool SubMap::Init(CMapRes *pCMapRes, dbc::Short sCopyNO)
 {T_B
 	m_pCMapRes = pCMapRes;
+    m_sCopyNO = sCopyNO;
 	m_pCBaseRange = 0;
 
 	// ×´Ì¬µ¥Ôª
@@ -522,7 +523,10 @@ void SubMap::MoveInMapMask(CCharacter* pCCha, const Point &SSrcPos, const Point 
 	l_dst.x = STarPos.x / lStep;
 	l_dst.y = STarPos.y / lStep;
 	if (l_src != l_dst)
-		pCCha->GetPlayer()->RefreshMapMask(GetName(), STarPos.x / 100, STarPos.y / 100);
+    {
+        pCCha->GetPlayer()->RefreshMapMask(GetName(), STarPos.x / 100, STarPos.y / 100);
+        m_mapPOIs.CheckNearby(pCCha);
+    }
 T_E}
 
 //void SubMap::Move(Entity* pCEnt, Point STarPos, Char chStep)
@@ -756,7 +760,8 @@ bool SubMap::Enter(Square* pSEntShape, Entity * ent, cLong clSearchRadius)
 	//beginsee
 	if(l_retval)
 	{
-		bool	bActive = ent->GetEyeshotAbility();
+		m_mapPOIs.Register(ent);
+        bool	bActive = ent->GetEyeshotAbility();
 
 		for(long y =l_rect.ltop.y;y <=l_rect.rbtm.y;y++)
 		{
@@ -852,6 +857,7 @@ T_E}
 //=============================================================================
 void SubMap::GoOut(Entity * ent)
 {T_B
+    m_mapPOIs.Remove(ent);
 	Point l_pt =ent->GetShape().centre;
 	Rect l_rect =GetEyeshot(l_pt);
 	//É¾³ý
@@ -1781,6 +1787,7 @@ void SubMap::Run(DWORD dwCurTime)
 		return;
 
 	m_COutMapCha.Run(dwCurTime);
+    m_mapPOIs.Run();
 
 	if (m_timeScriptRun.IsOK(dwCurTime))
 	{
@@ -1819,6 +1826,7 @@ void SubMap::Close()
 	g_CParser.DoString(strScript.c_str(), enumSCRIPT_RETURN_NONE, 0, enumSCRIPT_PARAM_LIGHTUSERDATA, 1, this, DOSTRING_PARAM_END);
 
 	m_bIsRun = false;
+    m_mapPOIs.Reset();
 T_E}
 
 void SubMap::BeforePlyOutMap(CCharacter *pCCha)

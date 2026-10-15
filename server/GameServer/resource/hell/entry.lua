@@ -5,7 +5,7 @@ function after_create_entry(entry)
     local copy_mgr = GetMapEntryCopyObj(entry, 0)
     SetMapEntryEventName(entry, "Abaddon 5")
     map_name, posx, posy, tmap_name = GetMapEntryPosInfo(entry) 
-    Notice("Announcement: In the depths of Abaddon ["..posx..","..posy.."], cries of the undead have constantly been heard, resulting in the people of Caribbean Island being afraid. Is there any warrior whose willing to investigate?")
+    Notice("A portal has opened. Explore to discover its location on the world map.")
 	Abaddon_Init()
 end
 function after_destroy_entry_hell(entry)

@@ -1391,3 +1391,11 @@ void CS_RequestExpRate() {
 
 
 
+
+void CS_MapPOI(unsigned long context, unsigned long long epoch, unsigned long revision)
+{
+    WPacket packet=g_NetIF->GetWPacket();
+    packet.WriteCmd(CMD_CM_MAP_POI);packet.WriteChar(1);
+    packet.WriteLong(context);packet.WriteLongLong(static_cast<LONG64>(epoch));packet.WriteLong(revision);
+    g_NetIF->SendPacketMessage(packet);
+}

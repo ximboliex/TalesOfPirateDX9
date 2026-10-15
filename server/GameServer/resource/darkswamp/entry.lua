@@ -6,7 +6,7 @@ function after_create_entry(entry)
     local CopyMgr = GetMapEntryCopyObj(entry, 0)
 	SetMapEntryEventName(entry, "Dark Swamp") 
     map_name, posx, posy, tmap_name = GetMapEntryPosInfo(entry) 
-	Notice("Announcement: The portal of Dark Swamp has appeared on Shaitan City ["..posx..","..posy.."].")
+	Notice("A portal has opened. Explore to discover its location on the world map.")
 end
 
 function after_destroy_entry_darkswamp(entry)
@@ -16,7 +16,7 @@ end
 
 function after_player_login_darkswamp(entry, player_name)
     map_name, posx, posy, tmap_name = GetMapEntryPosInfo(entry)
-    ChaNotice(player_name, "Announcement: The portal of Dark Swamp has appeared on Shaitan City ["..posx..","..posy.."].") 
+    ChaNotice(player_name, "A portal has opened. Explore to discover its location on the world map.")
 end
 
 function check_can_enter_darkswamp( Player, CopyMgr )

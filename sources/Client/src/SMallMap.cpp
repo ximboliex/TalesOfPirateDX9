@@ -1977,7 +1977,7 @@ void	CMinimap::InitScene()
 		{
 			_pMiniPack = new CMiniPack;
 			if(!_pMiniPack->Init((char*)m_pScene->GetTerrainName()))
-				delete _pMiniPack;
+                SAFE_DELETE(_pMiniPack);
 		}
 	}
 	//if(!CMaskData::g_MaskData && m_pScene && m_pScene->GetTerrain())
@@ -2377,6 +2377,10 @@ void	CMinimap::RenderScene()
 	g_Render.SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
 	g_Render.SetTextureStageState(0, D3DTSS_COLOROP,   D3DTOP_MODULATE);
 	g_Render.SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+    GUI::g_stUIMap.RenderMapMarkers({double(_rcWnd.left),double(_rcWnd.top),
+        double(_rcWnd.right-_rcWnd.left),double(_rcWnd.bottom-_rcWnd.top),
+        double(tnx),double(tny),1.6/100.0},true);
+
 }
 void	CMinimap::RenderMask()
 {
@@ -2434,6 +2438,11 @@ void	CMinimap::RenderMask()
 
 void	CLargerMap::InitScene()
 {
+    for(auto*& texture:_pTex)
+        if(texture!=_pTexDefault && texture!=_pTexMask)SAFE_RELEASE(texture);
+    _pTex.clear();tileKeys.clear();
+    SAFE_RELEASE(_pTexDefault);SAFE_RELEASE(_pTexMask);
+    SAFE_DELETE(_pMiniPack);
 	MPIResourceMgr* res_mgr = g_Render.GetInterfaceMgr()->res_mgr;
 
 	if(FAILED(lwLoadTex(&_pTexDefault,res_mgr, "texture\\ui\\minimap\\mapsea.bmp", 0, D3DFMT_A4R4G4B4)))
@@ -2530,6 +2539,7 @@ void	CLargerMap::Show(bool bShow)
 	if(!bShow)
 	{
 		_bUpdate = bShow;
+        tileKeys.assign(_pTex.size(),POINT{-2147483647,-2147483647});
 		int m;
 		for (m = 0; m < _TexHnum * _TexWnum; m++)
 		{
@@ -2562,10 +2572,7 @@ void	CLargerMap::Show(bool bShow)
 		return;
 	}
 
-	if(!CMaskData::g_MaskData)
-		return;
-
-	m_pScene = CGameApp::GetCurScene();
+    m_pScene = CGameApp::GetCurScene();
 	if( !m_pScene || !CGameScene::GetMainCha() )
 		return;
 
@@ -2579,8 +2586,20 @@ void	CLargerMap::Show(bool bShow)
 //Begin
 void	CLargerMap::Update( int x, int y )
 {
-	x = std::clamp(x, 0, defMAP_GARNER_WIDTH * 100);
-	y = std::clamp(y, 0, defMAP_GARNER_HEIGHT * 100);
+	    if(!m_pScene || !m_pScene->GetTerrain())return;
+    x=std::clamp(x,0,(std::max)(0,m_pScene->GetTerrain()->GetWidth()*100-1));
+    y=std::clamp(y,0,(std::max)(0,m_pScene->GetTerrain()->GetHeight()*100-1));
+    const int cols=int((_rcWnd.right-_rcWnd.left)/(TILE_SIZE*map_scale))+3;
+    const int rows=int((_rcWnd.bottom-_rcWnd.top)/(TILE_SIZE*map_scale))+3;
+    if(cols!=_TexWnum || rows!=_TexHnum) {
+        for(auto*& texture:_pTex) {
+            if(texture!=_pTexDefault && texture!=_pTexMask)SAFE_RELEASE(texture);
+        }
+        _TexWnum=cols;_TexHnum=rows;
+        _pTex.assign(cols*rows,nullptr);tileKeys.assign(cols*rows,POINT{-2147483647,-2147483647});
+        vecRect.resize(cols*rows);vecColor.resize((cols+1)*(rows+1));
+    }
+    if(tileKeys.size()!=_pTex.size())tileKeys.assign(_pTex.size(),POINT{-2147483647,-2147483647});
 
 	_nCenterX = x;
 	_nCenterY = y;
@@ -2643,7 +2662,7 @@ void	CLargerMap::Update( int x, int y )
 			if(_sx + n < 0 || _sy + m < 0)
 			{
 				// Fix the video memory exhausted bug
-				if( _pTex[idx] != _pTexDefault )
+				if( _pTex[idx] != _pTexDefault && _pTex[idx] != _pTexMask )
 				{
 					SAFE_RELEASE( _pTex[idx] );
 				}
@@ -2652,51 +2671,10 @@ void	CLargerMap::Update( int x, int y )
 			}
 			else
 			{
-				if(CMaskData::g_MaskData)
-				{
-					if(CMaskData::g_MaskData->GetMask((_sx + n) / 2, (_sy + m ) / 2))
-					{
-
-						vecColor[idx+1] = iColor;
-						vecColor[idx + 1+1] = iColor;
-
-						vecColor[idx + _TexWnum+1] = iColor; 
-						vecColor[idx + _TexWnum + 1+1] = iColor;
-
-						if(m < _TexHnum  - 1 && n < _TexWnum - 1)
-						{
-							vecColor[idx + 2+1] = iColor;
-							vecColor[idx + _TexWnum + 2+1] = iColor;
-						}
-
-						if(idx + _TexWnum * 2 <  _TexHnum * _TexWnum)
-						{
-							vecColor[idx + _TexWnum * 2+1] = iColor;
-							vecColor[idx + _TexWnum * 2 + 1+1] = iColor;
-							if(m < _TexHnum  - 1 && n < _TexWnum - 1)
-								vecColor[idx + _TexWnum * 2 + 2+1] = iColor;
-						}
-
-					}
-				}
-				else
-				{
-					vecColor[idx+1] = 0;
-					vecColor[idx + 1+1] = 0;
-					vecColor[idx + 2+1] = 0;
-
-					vecColor[idx + _TexWnum+1] = 0;
-					vecColor[idx + _TexWnum + 1+1] = 0;
-					vecColor[idx + _TexWnum + 2+1] = 0;
-
-					//if(idx + _TexWnum * 2 <  _TexHnum * _TexWnum)
-					if(m < _TexHnum && n < _TexWnum)
-					{
-						vecColor[idx + _TexWnum * 2+1] = 0;
-						vecColor[idx + _TexWnum * 2 + 1+1] = 0;
-						vecColor[idx + _TexWnum * 2 + 2+1] = 0;
-					}
-				}
+                vecColor[idx+1]=iColor;
+                vecColor[idx+2]=iColor;
+                vecColor[idx+_TexWnum+1]=iColor;
+                vecColor[idx+_TexWnum+2]=iColor;
 
 				if(!_pMiniPack)
 				{
@@ -2704,11 +2682,11 @@ void	CLargerMap::Update( int x, int y )
 						m_pScene->GetTerrainName(),_sx + n,_sy + m);
 
 					// If this texture not in video memory, load it.
-					if( !_pTex[idx] || strcmp( _pTex[idx]->GetFileName(), filename ) != 0 )
+					if(tileKeys[idx].x!=_sx+n || tileKeys[idx].y!=_sy+m)
 					{
 						if(_access(filename,0)== -1)
 						{
-							if( _pTex[idx] != _pTexDefault )
+							if( _pTex[idx] != _pTexDefault && _pTex[idx] != _pTexMask )
 							{
 								SAFE_RELEASE( _pTex[idx] );
 								_pTex[idx] = _pTexDefault;
@@ -2716,7 +2694,7 @@ void	CLargerMap::Update( int x, int y )
 						}
 						else
 						{
-							if( _pTex[idx] != _pTexDefault )
+							if( _pTex[idx] != _pTexDefault && _pTex[idx] != _pTexMask )
 							{
 								SAFE_RELEASE( _pTex[idx] );
 							}
@@ -2729,15 +2707,14 @@ void	CLargerMap::Update( int x, int y )
 				{
 					if(_pMiniPack->IsExit(_sx + n,_sy + m))
 					{
-						if( _pTex[idx] != _pTexDefault )
-						{
-							SAFE_RELEASE( _pTex[idx] );
-						}
-						_pMiniPack->GetTex(&_pTex[idx], _sx + n,_sy + m);
+						if(tileKeys[idx].x!=_sx+n || tileKeys[idx].y!=_sy+m) {
+                            if(_pTex[idx]!=_pTexDefault && _pTex[idx]!=_pTexMask)SAFE_RELEASE(_pTex[idx]);
+                            _pMiniPack->GetTex(&_pTex[idx],_sx+n,_sy+m);
+                        }
 					}
 					else
 					{
-						if( _pTex[idx] != _pTexDefault )
+						if( _pTex[idx] != _pTexDefault && _pTex[idx] != _pTexMask )
 						{
 							SAFE_RELEASE( _pTex[idx] );
 							_pTex[idx] = _pTexDefault;
@@ -2754,38 +2731,16 @@ void	CLargerMap::Update( int x, int y )
 			rct.bottom = rct.top + SCALED_TILE_SIZE;
 
 
+            tileKeys[idx]=POINT{_sx+n,_sy+m};
 			RECT* prc = &vecRect[idx];
 			::SetRect(prc,rct.left,rct.top,rct.right, rct.bottom);
 		}
 
 	}
 
-	if(CMaskData::g_MaskData)
-	{
-		fInf = 0;
-		int ty = CMaskData::g_MaskData->iNumY;
-		int tx = CMaskData::g_MaskData->iNumX;
+    // Do not rescan an entire exploration bitmap on every pan/zoom.
+    fInf=0;
 
-		for (int m = 0; m <  ty; m++)
-		{
-			for (int n = 0; n <  tx; n++)
-			{
-				if(CMaskData::g_MaskData->GetMask(n, m))
-				{
-					fInf+=1;
-				}
-			}
-		}
-		fInf /= float((CMaskData::g_MaskData->iNumX) * (CMaskData::g_MaskData->iNumY));
-		fInf *= 100;
-		//id1 = (int)fInf * 100;
-		//id2 = (int)(fInf * 10000) - id1;
-
-		//fInf = (int)fInf;
-		//fInf/=100;
-	}
-	else
-		fInf = 0;
 }
 //End
 void	CSMNpc::Render(/*int iType,int nx,int ny,int wh = 8*/)
@@ -2809,63 +2764,41 @@ void	CLargerMap::RenderScene()
 	if(!CGameScene::GetMainCha())
 		return;
 
-	const bool mouseInMap = g_pGameApp->GetMouseX() > _rcWnd.left &&
-		g_pGameApp->GetMouseX() < _rcWnd.right &&
-		g_pGameApp->GetMouseY() > _rcWnd.top &&
-		g_pGameApp->GetMouseY() < _rcWnd.bottom;
-
-	if( mouseInMap && g_pGameApp->GetMouseKey() & M_RDown )
-	{
-		if (CGameScene::GetMainCha()->IsBoat())
-		{
-			g_stUIBox.ShowMsgBox(NULL, "No routing on sea.");
-			return;
-		}
-		/* Resets to initial location when map was opened?
- Update( _nInitX, _nInitY );
-*/
-		const POINT mouse_coord = g_stUIMap.GetMouseCoordinate();
-		g_cFindPathEx.Reset();
-		g_cFindPathEx.ClearDestDirection();
-		g_cFindPathEx.SetDestDirection((int)CGameScene::GetMainCha()->GetPos().x, (int)CGameScene::GetMainCha()->GetPos().y, mouse_coord.x, mouse_coord.y);
-		g_cFindPathEx.SetTarget((int)CGameScene::GetMainCha()->GetPos().x, (int)CGameScene::GetMainCha()->GetPos().y, mouse_coord.x, mouse_coord.y);
-
-
-
-		D3DXVECTOR3 v(mouse_coord.x, mouse_coord.y, 0);
-		CNavigationBar::g_cNaviBar.SetTarget("", v );
-		CNavigationBar::g_cNaviBar.Show(true);
-	}
-	else if (g_pGameApp->IsMouseContinue(0) || (g_pGameApp->GetMouseKey() & M_LDown))
-	{
-		static DWORD dwTime=0;
-		const int nInitX=400, nInitY=300;
-		if( CGameApp::GetCurTick() > dwTime )
-		{
-			dwTime = CGameApp::GetCurTick() + 100;
-
-			if (mouseInMap)
-			{
-				constexpr auto magic{ 50 };
-				_nCenterX += (magic / map_scale) * (g_pGameApp->GetMouseX() - nInitX);
-				_nCenterY += (magic / map_scale) * (g_pGameApp->GetMouseY() - nInitY);
-
-				Update(_nCenterX, _nCenterY);
-			}
-			else if (follow_player)
-			{
-				constexpr auto distance = 4 * 100;
-				const auto x_dist = std::abs(CGameScene::GetMainCha()->GetCurX() - _nCenterX);
-				const auto y_dist = std::abs(CGameScene::GetMainCha()->GetCurY() - _nCenterY);
-				if (x_dist > distance || y_dist > distance)
-				{
-					_nCenterX = CGameScene::GetMainCha()->GetCurX();
-					_nCenterY = CGameScene::GetMainCha()->GetCurY();
-					Update(_nCenterX, _nCenterY);
-				}
-			}
-		}
-	}
+    if(auto* rect=GUI::g_stUIMap.GetBigmapRect();rect) {
+        RECT bounds{rect->GetX(),rect->GetY(),rect->GetX2(),rect->GetY2()};SyncViewport(bounds);
+    }
+    const auto projection=GetProjection();
+    const int mouseX=g_pGameApp->GetMouseX(),mouseY=g_pGameApp->GetMouseY();
+    const bool mouseInMap=projection.Contains(mouseX,mouseY);
+    if(mouseInMap && (g_pGameApp->GetMouseKey() & M_RDown)) {
+        if(!CGameScene::GetMainCha()->IsBoat()) {
+            double x,y;projection.World(mouseX,mouseY,x,y);
+            if(m_pScene && m_pScene->GetTerrain() && x>=0 && y>=0 &&
+               x<m_pScene->GetTerrain()->GetWidth()*100 && y<m_pScene->GetTerrain()->GetHeight()*100) {
+                const int mx=int(x/100),my=int(y/100);
+                g_cFindPathEx.Reset();g_cFindPathEx.ClearDestDirection();
+                g_cFindPathEx.SetDestDirection(int(CGameScene::GetMainCha()->GetPos().x),int(CGameScene::GetMainCha()->GetPos().y),mx,my);
+                g_cFindPathEx.SetTarget(int(CGameScene::GetMainCha()->GetPos().x),int(CGameScene::GetMainCha()->GetPos().y),mx,my);
+                D3DXVECTOR3 target(float(mx),float(my),0);
+                CNavigationBar::g_cNaviBar.SetTarget("",target);
+                CNavigationBar::g_cNaviBar.Show(true);
+            }
+        }
+    }
+    if(mouseInMap && (g_pGameApp->IsMouseContinue(0) || (g_pGameApp->GetMouseKey() & M_LDown))) {
+        if(dragging && (dragX!=mouseX || dragY!=mouseY)) {
+            follow_player=false;
+            Update(_nCenterX-int((mouseX-dragX)/projection.pixelsPerCm),
+                   _nCenterY-int((mouseY-dragY)/projection.pixelsPerCm));
+        }
+        dragging=true;dragX=mouseX;dragY=mouseY;
+    } else dragging=false;
+    if(follow_player && !dragging && DWORD(CGameApp::GetCurTick()-lastMapInput)>=100) {
+        lastMapInput=CGameApp::GetCurTick();
+        auto* cha=CGameScene::GetMainCha();
+        if(std::abs(cha->GetCurX()-_nCenterX)>=400 || std::abs(cha->GetCurY()-_nCenterY)>=400)
+            Update(cha->GetCurX(),cha->GetCurY());
+    }
 
 	m_pScene  = g_pGameApp->GetCurScene();
 	g_Render.SetRenderState(D3DRS_ZENABLE, FALSE);
@@ -2923,6 +2856,10 @@ void	CLargerMap::RenderScene()
 
 	g_Render.SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
 
+    RECT oldScissor;DWORD oldScissorEnabled=FALSE;
+    auto* device=g_Render.GetDevice();device->GetScissorRect(&oldScissor);
+    device->GetRenderState(D3DRS_SCISSORTESTENABLE,&oldScissorEnabled);
+    device->SetScissorRect(&_rcWnd);device->SetRenderState(D3DRS_SCISSORTESTENABLE,TRUE);
 	for(int  m = 0; m < _TexHnum; m++)
 	{
 		for(int n = 0; n < _TexWnum; n++)
@@ -2984,6 +2921,8 @@ void	CLargerMap::RenderScene()
 	_cSmNpc.setColor(0xffffffff);
 	_cSmNpc.Render();
 
+    device->SetScissorRect(&oldScissor);device->SetRenderState(D3DRS_SCISSORTESTENABLE,oldScissorEnabled);
+    GUI::g_stUIMap.RenderMapMarkers(GetProjection(),false);
 	CMPFont* pfont = g_pGameApp->GetFont();
 	if(pfont)
 	{
@@ -3000,4 +2939,11 @@ void	CLargerMap::RenderScene()
 
 void	CLargerMap::RenderMask()
 {
+}
+
+void CLargerMap::SyncViewport(const RECT& rect)
+{
+    if(rect.left==_rcWnd.left && rect.top==_rcWnd.top && rect.right==_rcWnd.right && rect.bottom==_rcWnd.bottom)return;
+    _rcWnd=rect;
+    if(_bUpdate)Update(_nCenterX,_nCenterY);
 }

@@ -46,6 +46,7 @@ T_E}
 
 void CPlayer::Initially()
 {T_B
+    nextMapPOIRequest = 0;
     ForgetAddress(this);
 	bIsValid = true;
     Init(NULL, 0);

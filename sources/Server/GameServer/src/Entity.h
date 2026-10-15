@@ -61,7 +61,10 @@ public:
 	const long		&GetRadius() const {return m_shape.radius;}
 
 	// Internal incarnation token; never serialized into legacy packets.
-	unsigned long long GetLifeGeneration() const { return m_ullLifeGeneration; }
+	unsigned long long GetMapPOIId() const { return m_mapPOIId; }
+    const SubMap* GetMapPOIOwner() const { return m_mapPOIOwner; }
+    void SetMapPOI(const SubMap* owner, unsigned long long id) { m_mapPOIOwner=owner; m_mapPOIId=id; }
+    unsigned long long GetLifeGeneration() const { return m_ullLifeGeneration; }
 	void AdvanceLifeGeneration() { if (++m_ullLifeGeneration == 0) ++m_ullLifeGeneration; }
 
 	dbc::uLong		GetID()const			{return m_ID;}
@@ -142,7 +145,9 @@ public:
 
 	CLogFile		m_CLog;
 	dbc::uLong		m_ID;
-	unsigned long long m_ullLifeGeneration = 0;
+	unsigned long long m_mapPOIId = 0;
+    const SubMap* m_mapPOIOwner = nullptr;
+    unsigned long long m_ullLifeGeneration = 0;
 
 protected:
 	Entity();

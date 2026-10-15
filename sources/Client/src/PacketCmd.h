@@ -613,3 +613,6 @@ extern BOOL SC_RefreshSelectScreen(LPRPACKET pk);
 extern std::vector<NetChaBehave> ReadSelectCharacters(RPacket& rpk);
 
 #endif		//PACKETCMD_H
+
+void CS_MapPOI(unsigned long context, unsigned long long epoch, unsigned long revision);
+BOOL SC_MapPOI(LPRPACKET packet);

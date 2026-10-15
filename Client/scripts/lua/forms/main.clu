@@ -548,74 +548,48 @@ UI_SetHint( btnOpenGuild , "Guild(Alt+C)" )
 ---------------------------
 -- main main (world map) --
 ---------------------------
-frmBigmap = UI_CreateForm( "frmBigmap", FALSE, 569, 430, 30, 80, TRUE, FALSE )
-UI_ShowForm( frmBigmap, TRUE )
+-- World map v1. Authorization and discovery are supplied by GameServer.
+frmBigmap = UI_CreateForm( "frmBigmap", FALSE, 740, 520, 0, 0, TRUE, FALSE )
+UI_ShowForm( frmBigmap, FALSE )
 UI_AddFormToTemplete( frmBigmap, FORM_MAIN )
-UI_FormSetIsEscClose( frmBigmap, FALSE )
+UI_SetFormStyle( frmBigmap, 1 )
 UI_FormSetHotKey( frmBigmap, ALT_KEY, HOTKEY_W )
-UI_FormSetIsEscClose( frmBigmap, FALSE )
-
-imgBigmap1 = UI_CreateCompent( frmBigmap, IMAGE_TYPE, "imgBigmap1", 256, 256, 0, 0 )
-UI_LoadImage( imgBigmap1, "texture/ui/bigmap1.tga", NORMAL, 256, 256, 0, 0 )
-
-imgBigmap2 = UI_CreateCompent( frmBigmap, IMAGE_TYPE, "imgBigmap2", 256, 256, 256, 0 )
-UI_LoadImage( imgBigmap2, "texture/ui/bigmap2.tga", NORMAL, 256, 256, 0, 0 )
-
-imgBigmap3 = UI_CreateCompent( frmBigmap, IMAGE_TYPE, "imgBigmap3", 256, 256, 512, 0 )
-UI_LoadImage( imgBigmap3, "texture/ui/bigmap3.tga", NORMAL, 256, 256, 0, 0 )
-
-imgBigmap4 = UI_CreateCompent( frmBigmap, IMAGE_TYPE, "imgBigmap4", 256, 256, 0, 256 )
-UI_LoadImage( imgBigmap4, "texture/ui/bigmap4.tga", NORMAL, 256, 256, 0, 0 )
-
-imgBigmap5 = UI_CreateCompent( frmBigmap, IMAGE_TYPE, "imgBigmap5", 256, 256, 256, 256 )
-UI_LoadImage( imgBigmap5, "texture/ui/bigmap5.tga", NORMAL, 256, 256, 0, 0 )
-
-imgBigmap6 = UI_CreateCompent( frmBigmap, IMAGE_TYPE, "imgBigmap6", 256, 256, 512, 256 )
-UI_LoadImage( imgBigmap6, "texture/ui/bigmap6.tga", NORMAL, 256, 256, 0, 0 )
-
-UI_CreateCompent( frmBigmap, UI3D_COMPENT_TYPE, "d3dCompent", 530, 390, 140, 52 )
-
-
-imgBigmap11 = UI_CreateCompent( frmBigmap, IMAGE_TYPE, "imgBigmap11", 256, 256, 0, 0 )
-UI_LoadImage( imgBigmap11, "texture/ui/bigmap8.tga", NORMAL, 256, 256, 0, 0 )
-
-imgBigmap21 = UI_CreateCompent( frmBigmap, IMAGE_TYPE, "imgBigmap21", 256, 97, 256, 10 )
-UI_LoadImage( imgBigmap21, "texture/ui/bigmap9.tga", NORMAL, 256, 97, 0, 0 )
-
-imgBigmap31 = UI_CreateCompent( frmBigmap, IMAGE_TYPE, "imgBigmap31", 256, 256, 512, 0 )
-UI_LoadImage( imgBigmap31, "texture/ui/bigmap10.tga", NORMAL, 256, 256, 0, 0 )
-
-imgBigmap41 = UI_CreateCompent( frmBigmap, IMAGE_TYPE, "imgBigmap41", 256, 256, 0, 256 )
-UI_LoadImage( imgBigmap41, "texture/ui/bigmap11.tga", NORMAL, 256, 256, 0, 0 )
-
-imgBigmap51 = UI_CreateCompent( frmBigmap, IMAGE_TYPE, "imgBigmap51", 256, 97, 256, 373 )
-UI_LoadImage( imgBigmap51, "texture/ui/bigmap9.tga", NORMAL, 256, 97, 0, 159 )
-
-imgBigmap61 = UI_CreateCompent( frmBigmap, IMAGE_TYPE, "imgBigmap61", 256, 256, 512, 256 )
-UI_LoadImage( imgBigmap61, "texture/ui/bigmap12.tga", NORMAL, 256, 256, 0, 0 )
-
-
-btnLeft = UI_CreateCompent( frmBigmap, BUTTON_TYPE, "btnLeft", 15, 39, 160, 230 )
-UI_LoadButtonImage( btnLeft, "texture/ui/SysBotton4.tga", 15, 39, 165, 39, TRUE )
-
-btnRight = UI_CreateCompent( frmBigmap, BUTTON_TYPE, "btnRight", 15, 39, 640, 230 )
-UI_LoadButtonImage( btnRight, "texture/ui/SysBotton4.tga", 15, 39, 165, 0, TRUE )
-
-btnTop = UI_CreateCompent( frmBigmap, BUTTON_TYPE, "btnTop", 39, 15, 387, 60 )
-UI_LoadButtonImage( btnTop, "texture/ui/ShipBuildT.tga", 39, 15, 132, 185, FALSE )
-
-btnDown = UI_CreateCompent( frmBigmap, BUTTON_TYPE, "btnDown", 39, 15, 387, 420 )
-UI_LoadButtonImage( btnDown, "texture/ui/ShipBuildT.tga", 39, 15, 132, 123, FALSE )
-
-btnZoomIn = UI_CreateCompent(frmBigmap, BUTTON_TYPE, "btnZoomIn", 15, 15, 526, 371)
-UI_LoadButtonImage(btnZoomIn, "texture/ui/new/frmBigmap.png", 10, 10, 756, 256, FALSE )
-
-btnZoomOut = UI_CreateCompent(frmBigmap, BUTTON_TYPE, "btnZoomOut", 15, 15, 543, 375)
-UI_LoadButtonImage(btnZoomOut, "texture/ui/new/frmBigmap.png", 10, 10, 771, 259, FALSE )
-
-btnNo = UI_CreateCompent( frmBigmap, BUTTON_TYPE, "btnNo", 111, 36, 615, 415 )
-UI_LoadButtonImage( btnNo, "texture/ui/Close.tga", 111, 36, 0, 0, FALSE )
-UI_SetButtonModalResult( btnNo, BUTTON_CLOSE )
+UI_FormSetIsEscClose( frmBigmap, TRUE )
+UI_SetIsDrag( frmBigmap, FALSE )
+UI_CreateCompent( frmBigmap, UI3D_COMPENT_TYPE, "d3dMapBackdrop", 740, 520, 0, 0 )
+UI_CreateCompent( frmBigmap, UI3D_COMPENT_TYPE, "d3dCompent", 526, 420, 200, 52 )
+local function MapLabel(name, caption, x, y, width)
+    local label = UI_CreateCompent(frmBigmap, LABELEX_TYPE, name, width, 18, x, y)
+    UI_SetCaption(label, caption)
+    UI_SetTextColor(label, COLOR_WHITE)
+    return label
+end
+MapLabel("labMapTitle", "MAPA DEL MUNDO", 18, 17, 300)
+MapLabel("labMapHelp", "Arrastra para explorar | Clic derecho: ruta", 200, 488, 430)
+local filters = { {"chkBossPOI", "Jefes"}, {"chkMiniPOI", "Minijefes"},
+    {"chkChestPOI", "Cofres descubiertos"}, {"chkPortalPOI", "Portales descubiertos"} }
+for i, value in ipairs(filters) do
+    local y = 66 + (i-1)*25
+    local check = UI_CreateCompent(frmBigmap, CHECK_TYPE, value[1], 10, 10, 20, y)
+    UI_LoadImage(check, "texture/ui/QQ2.tga", UNCHECKED, 10, 10, 40, 231)
+    UI_LoadImage(check, "texture/ui/QQ2.tga", CHECKED, 10, 10, 52, 231)
+    MapLabel("labMapFilter"..i, value[2], 37, y-2, 146)
+end
+MapLabel("labKnownPOI", "PUNTOS CONOCIDOS", 20, 177, 160)
+local list = UI_CreateCompent(frmBigmap, LIST_TYPE, "lstMapPOI", 166, 200, 18, 201)
+MapLabel("labPOIName", "Selecciona un punto", 20, 421, 164)
+MapLabel("labPOIState", "Solo puntos conocidos", 20, 444, 164)
+local function MapButton(name, text, x, y, width)
+    local button=UI_CreateCompent(frmBigmap, BUTTON_TYPE, name, width, 22, x, y)
+    UI_SetTextColor(button, COLOR_WHITE)
+    UI_SetCaption(button, text)
+    return button
+end
+MapButton("btnZoomIn", "+", 652, 17, 22)
+MapButton("btnZoomOut", "-", 622, 17, 22)
+MapButton("btnPOICenter", "Centrar", 544, 17, 66)
+local close=MapButton("btnPOIClose", "X", 700, 17, 22)
+UI_SetButtonModalResult(close, BUTTON_CLOSE)
 
 -----------------------------------------------------------------------
 -- 定义跟随界面

@@ -1,0 +1,5 @@
+# Only copy 0 of these permanent worlds persists shared discovery.
+garner
+magicsea
+darkblue
+winterland

@@ -3889,3 +3889,12 @@ BOOL SC_UnlockItemAsr(LPRPACKET pk)
 
 //==================================================================================
 
+
+BOOL SC_MapPOI(LPRPACKET packet)
+{
+    dbc::uShort length=0;
+    const auto* bytes=reinterpret_cast<const std::uint8_t*>(packet.ReadSequence(length));
+    map_poi::Message message;
+    if(!map_poi::Decode(bytes,length,message))return FALSE;
+    return g_stUIMap.MapMarkers().Apply(message)?TRUE:FALSE;
+}

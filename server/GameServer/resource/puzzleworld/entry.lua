@@ -6,7 +6,7 @@ function after_create_entry(entry)
     local CopyMgr = GetMapEntryCopyObj(entry, 0)
     SetMapEntryEventName(entry, "Demonic World")
     map_name, posx, posy, tmap_name = GetMapEntryPosInfo(entry)
-    Notice("Announcement: The portal of Demonic World has appeared on Ascaron [" .. posx .. "," .. posy .. "].")
+    Notice("A portal has opened. Explore to discover its location on the world map.")
 end
 
 function after_destroy_entry_puzzleworld(entry)

@@ -240,8 +240,10 @@ DWORD WINAPI cfl_iocpclt::wrk_thrd(LPVOID wrk_thrd_ctx)
     while (true)
         {
         // continually loop to service io completion packets
-        ret = GetQueuedCompletionStatus(that->_hIOCP, &io_size, (LPDWORD)&sk_ctx,
+        ULONG_PTR completionKey = 0;
+        ret = GetQueuedCompletionStatus(that->_hIOCP, &io_size, &completionKey,
                                         &overlapped, INFINITE);
+        sk_ctx = reinterpret_cast<PER_SOCKET_CONTEXT*>(completionKey);
         if (!ret)
             cfl_printf("Failed to GetQueuedCompletionStatus: %d\n", GetLastError());
 
@@ -350,7 +352,7 @@ bool cfl_iocpclt::update_iocp(PER_SOCKET_CONTEXT* sk_ctx, IO_OPERATION client_io
     {
     sk_ctx->io_ctx->io_op = client_io;
 
-    _hIOCP= CreateIoCompletionPort((HANDLE)sk_ctx->sk, _hIOCP, DWORD(sk_ctx), 0);
+    _hIOCP= CreateIoCompletionPort((HANDLE)sk_ctx->sk, _hIOCP, reinterpret_cast<ULONG_PTR>(sk_ctx), 0);
     if (NULL == _hIOCP)
         {
         cfl_printf("CreateIocompletionPort: %d\n", GetLastError());

@@ -1324,11 +1324,9 @@ bool TBLGuilds::InitGuildMember(Player *ply,uLong chaid,uLong gldid,int mode)
 					l_toSelf.WriteLong(ply->GetGuild()->m_leaderID);	//»á³¤ID
 				}
 				uLong l_memaddr		=atol((cChar *)_buf[0]);
-				if(l_memaddr)
-				{
-					l_plylst[l_plynum] = ToPointer<Player>(l_memaddr);
-					l_plynum++;
-				}
+				auto onlinePlayer = ToPointer<Player>(l_memaddr);
+                if (onlinePlayer) l_plylst[l_plynum++] = onlinePlayer;
+                else l_memaddr = 0;
 				if(mode && chaid ==atol((cChar*)_buf[1]))
 				{
 					l_toGuild.WriteChar(l_memaddr?1:0);			//online

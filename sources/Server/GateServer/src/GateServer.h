@@ -239,6 +239,7 @@ public:
 
 	bool InitReference(dbc::DataSocket* datasock);
 	void Free() { PreAllocStru::Free(); }
+    ~ClientConnection() { dbc::ForgetAddress(this); }
 
 	// Add by lark.li 20081119 begin
 	bool BeginRun();

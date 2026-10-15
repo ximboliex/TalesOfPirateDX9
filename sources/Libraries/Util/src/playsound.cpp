@@ -535,7 +535,7 @@ void dispatch_exit(int id)
 DWORD WINAPI play_mus_thread(LPVOID lpParameter)
     {
     DWORD ret;
-    int id = (int)lpParameter;
+    int id = static_cast<int>(reinterpret_cast<INT_PTR>(lpParameter));
     HANDLE sig_cmd = sig_cmd_array[id];
     mus_dat_array[id].sig_exit = sig_exit;
 

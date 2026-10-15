@@ -46,6 +46,7 @@ T_E}
 
 void CPlayer::Initially()
 {T_B
+    ForgetAddress(this);
 	bIsValid = true;
     Init(NULL, 0);
     _nTeamMemberCnt = 0;
@@ -97,6 +98,7 @@ T_E}
 
 void CPlayer::Finally()
 {T_B
+    ForgetAddress(this);
 	GetNextPlayer() = NULL;
 
 	m_pMainCha->TradeClear( *this );

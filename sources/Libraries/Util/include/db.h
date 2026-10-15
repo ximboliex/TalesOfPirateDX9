@@ -157,7 +157,7 @@ protected:
     // temp buffer
     enum {MAX_COL = 64, MAX_DATALEN = 8192};
     UCHAR _buf[MAX_COL][MAX_DATALEN];
-    SDWORD _buf_len[MAX_COL];
+    SQLLEN _buf_len[MAX_COL];
 
     SWORD _col_num;
     SWORD _row_num;

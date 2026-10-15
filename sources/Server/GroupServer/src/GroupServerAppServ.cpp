@@ -123,7 +123,7 @@ WPacket	GroupServerApp::OnServeCall(DataSocket *datasock,RPacket &pk)
 	uLong		l_plygt	=0;
 	try
 	{
-		l_plygt	=l_ply->m_gtAddr;
+		l_plygt = l_ply ? l_ply->m_gtAddr : 0;
 	}catch(...)
 	{
 		l_ply	=0;

@@ -1267,7 +1267,7 @@ RECONNECT:
 
     SQLRETURN sqlret;
     SQLHSTMT hstmt = SQL_NULL_HSTMT;
-    SQLINTEGER data_len = SQL_NTS;
+    SQLLEN data_len = SQL_NTS;
 
     do
     {
@@ -1347,7 +1347,7 @@ RECONNECT:
 
     SQLRETURN sqlret;
     SQLHSTMT hstmt = SQL_NULL_HSTMT;
-    SQLINTEGER data_len = len;
+    SQLLEN data_len = len;
 
     do
     {
@@ -1521,7 +1521,7 @@ bool cfl_rs::get_page_data(char* tablename, char* param, int pagesize, int pagei
     {
         do
         {
-			SQLINTEGER sql_nts = SQL_NTS;
+			SQLLEN sql_nts = SQL_NTS;
 			SQLINTEGER num[2];
 
 			//char tablename[32];

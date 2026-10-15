@@ -408,7 +408,7 @@ void CGameApp::OnGateDisconnect(GateServer* pGate, RPACKET pkt)
 
 
 	//NOTE(Ogge): Weird that we first cast to GatePlayer(base class) and then in while loop to CPlayer(derived class)
-	auto tmp = ToPointer<GatePlayer>(READ_LONG(pkt));
+	GatePlayer* tmp = ToPointer<CPlayer>(READ_LONG(pkt));
 
 	while (tmp != NULL)
 	{

@@ -140,7 +140,7 @@ void ToGameServer::OnDisconnect(DataSocket* datasock, int reason) // reasonÖµ:
 	{
 		ply_addr = ToPointer<ClientConnection>(retpk.ReadLong());
 		db_id = (uLong)retpk.ReadLong();
-		if(l_game ==ply_addr->game)
+		if(ply_addr && l_game == ply_addr->game)
 		{
 			ply_array[i -l_notcount] = ply_addr;
 		}else
@@ -416,7 +416,7 @@ void ToGameServer::MT_SWITCHMAP(DataSocket* datasock, RPacket& recvbuf)
 	uShort	l_aimnum = l_rpk.ReverseReadShort();		//l_aimnumÓÀÔ¶µÈÓÚ1
 
 	auto l_ply = ToPointer<ClientConnection>(l_rpk.ReverseReadLong());
-	if (l_ply->m_dbid != l_rpk.ReverseReadLong())					//chaid
+	if (!l_ply || l_ply->m_dbid != l_rpk.ReverseReadLong())					//chaid
 	{
 		return;
 	}

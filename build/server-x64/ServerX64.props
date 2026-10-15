@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Imported after the legacy per-project settings so x86 paths cannot win. -->
+  <PropertyGroup>
+    <ServerRepoRoot>$(MSBuildThisFileDirectory)..\..\</ServerRepoRoot>
+    <ServerDependencyRoot Condition="'$(ServerDependencyRoot)'==''">$(ServerRepoRoot)dependencies\server-x64\</ServerDependencyRoot>
+    <ServerBuildConfiguration Condition="$([System.String]::Copy('$(Configuration)').EndsWith('Debug'))">Debug</ServerBuildConfiguration>
+    <ServerBuildConfiguration Condition="'$(ServerBuildConfiguration)'==''">Release</ServerBuildConfiguration>
+    <OutDir>$(ServerRepoRoot)sources\out\server\x64\$(ServerBuildConfiguration)\</OutDir>
+    <IntDir>$(ServerRepoRoot)sources\out\server\obj\x64\$(ProjectName)\$(ServerBuildConfiguration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0601;WINVER=0x0601;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <!-- Explicit pointer truncation is an error even in legacy /W0 projects. -->
+      <AdditionalOptions>/we4302 /we4311 /we4312 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX64</TargetMachine>
+      <AdditionalLibraryDirectories>$(OutDir);$(ServerDependencyRoot)$(ServerBuildConfiguration)\lib</AdditionalLibraryDirectories>
+    </Link>
+    <Lib>
+      <TargetMachine>MachineX64</TargetMachine>
+      <AdditionalLibraryDirectories>$(OutDir);$(ServerDependencyRoot)$(ServerBuildConfiguration)\lib</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+</Project>

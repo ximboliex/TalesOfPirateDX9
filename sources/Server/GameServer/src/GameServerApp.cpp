@@ -255,7 +255,7 @@ void GameServerApp::OnDisconnect(DataSocket *datasock,int reason)
         // 通知逻辑层与该Gate的连接断开
         WPacket pkt = GetWPacket();
         pkt.WriteCmd(CMD_MM_GATE_RELEASE);
-		pkt.WriteLong(ToAddress(gt->m_playerlist));
+		pkt.WriteLong(ToAddress(static_cast<CPlayer*>(gt->m_playerlist)));
         auto rpkt = RPacket(pkt);
         AddPK(datasock, rpkt);
 

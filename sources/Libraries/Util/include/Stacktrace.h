@@ -38,7 +38,7 @@
 #include <windows.h>
 
 // Only valid in the following environment: Intel platform, MS VC++ 5/6/7
-#ifndef _X86_
+#if !defined(_X86_) && !defined(_M_X64)
 #error Only INTEL envirnoments are supported!
 #endif
 

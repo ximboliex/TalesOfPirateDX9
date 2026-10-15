@@ -10,7 +10,7 @@
 #pragma once
 
 #ifndef	_WIN32_WINNT
-#define _WIN32_WINNT 0x0501
+#define _WIN32_WINNT 0x0601
 #endif
 #ifndef	_WIN32_WINDOWS
 #define _WIN32_WINDOWS _WIN32_WINNT_WIN7 
@@ -24,6 +24,9 @@
 #endif
 
 #include <cstdint>
+#ifdef _WIN64
+#include "WireHandleRegistry.h"
+#endif
 
 
 //----------------------------------------------------------------
@@ -117,13 +120,30 @@ private:
 //=================================================================
 template <typename T>
 inline T* ToPointer(std::uintptr_t address) {
-	return reinterpret_cast<T*>(address);
+	#ifdef _WIN64
+    if (address > static_cast<std::uintptr_t>((std::numeric_limits<std::int32_t>::max)())) return nullptr;
+    return WireHandleRegistry::Instance().Resolve<T>(static_cast<std::uint32_t>(address));
+#else
+    return reinterpret_cast<T*>(address);
+#endif
 }
 
-inline std::uintptr_t ToAddress(void* pointer) {
-	return reinterpret_cast<std::uintptr_t>(pointer);
+template <typename T>
+inline std::uint32_t ToAddress(T* pointer) {
+#ifdef _WIN64
+    return WireHandleRegistry::Instance().Insert(pointer);
+#else
+    return static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(pointer));
+#endif
+}
+
+inline void ForgetAddress(const void* pointer) {
+#ifdef _WIN64
+    WireHandleRegistry::Instance().Erase(pointer);
+#endif
 }
 //=================================================================
+static_assert(sizeof(uLong) == 4 && sizeof(Long) == 4, "Packet/SQL longs must stay 32-bit");
 //TODO(Ogge): Remove MemCpy and MemSet
 inline char* MemCpy(char *dest,cChar *src,uLong size)
 {

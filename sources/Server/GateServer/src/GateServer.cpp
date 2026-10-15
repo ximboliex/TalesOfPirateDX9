@@ -304,6 +304,7 @@ bool ClientConnection::InitReference(dbc::DataSocket* datasock)
 
 void ClientConnection::Initially()
 {
+    ForgetAddress(this);
 	m_worldid = m_actid = m_dbid = gm_addr = gp_addr = 0;
 	m_status = ClientConnection::Status::Invalid;
 	m_password[0] = 0;
@@ -323,6 +324,7 @@ void ClientConnection::Initially()
 
 void ClientConnection::Finally()
 {
+    ForgetAddress(this);
 	m_worldid = m_actid = m_dbid = gm_addr = gp_addr = 0;
 	m_status = ClientConnection::Status::Invalid;
 	game = NULL;

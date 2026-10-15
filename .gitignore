@@ -149,3 +149,7 @@ ServerSide/GroupServer/GroupServer*.exe
 Phoenix Online/log*/
 DatabasePath/GameDtopnet64.mdf
 DatabasePath/GameDtopnet64_log.ldf
+
+# Isolated server x64 build and external SDKs
+sources/out/server/
+dependencies/server-x64/

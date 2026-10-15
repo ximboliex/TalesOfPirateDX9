@@ -120,7 +120,7 @@ int myiocpclt::on_disconn(PER_SOCKET_CONTEXT* sk_ctx)
     Packet* pkt = (Packet *)rpktpool.get();
     if (pkt != NULL)
     {
-        pkt->WriteLong((long)gt->GetPlayerList());
+        pkt->WriteLong(ToAddress(static_cast<CPlayer*>(gt->GetPlayerList())));
         pkt->ResetOffset();
     }
     postmsg(NETMSG_GATE_DISCONNECT, gt, pkt);

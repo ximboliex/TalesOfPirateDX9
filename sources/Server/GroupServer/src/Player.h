@@ -22,6 +22,7 @@ public:
 	enum { emMaxCharacters = 10, emMaxSessChat = 30, emMaxSessPlayer = 100 };
 	Player(uLong size);
 	void	Free(){PreAllocStru::Free();}
+    ~Player() { dbc::ForgetAddress(this); }
 	bool	BeginRun();
 	bool	EndRun();
 	void	EndPlay(DataSocket *datasock);

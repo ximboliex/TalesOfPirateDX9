@@ -567,8 +567,9 @@ uLong RPacket::ReverseReadLong()
 }
 
 LONG64 dbc::RPacket::ReverseReadLongLong() {
-	const auto high = ReverseReadLong();
+	// The low word is last on the wire, so reverse reading consumes it first.
 	const auto low = ReverseReadLong();
+	const auto high = ReverseReadLong();
 	return join_uint32_to_uint64(high, low);
 }
 

@@ -15,6 +15,7 @@ Player::Player(uLong size) : PreAllocStru(size)
 
 void Player::Initially()
 {
+    ForgetAddress(this);
 	RunBiDirectItem<Player>::Initially();
 	GuildMember::Initially();
 	TeamMember::Initially();
@@ -51,6 +52,7 @@ void Player::Initially()
 }
 void Player::Finally()
 {
+    ForgetAddress(this);
 	m_gate		=0;
 	m_gtAddr	=0;
 	m_bp_currcha=-1;

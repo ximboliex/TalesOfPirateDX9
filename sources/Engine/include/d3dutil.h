@@ -61,7 +61,7 @@ HRESULT D3DUtil_SetColorKey( IDirect3DTextureX* pTexture, DWORD dwColorKey );
 //-----------------------------------------------------------------------------
 HRESULT D3DUtil_CreateVertexShader( IDirect3DDeviceX* pd3dDevice, 
 								    TCHAR* strFilename, DWORD* pdwVertexDecl,
-									DWORD* pdwVertexShader );
+									IDirect3DVertexShaderX** vertexShader );
 
 									
 									

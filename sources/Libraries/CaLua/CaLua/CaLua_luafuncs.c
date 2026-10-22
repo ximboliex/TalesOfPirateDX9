@@ -22,8 +22,15 @@ char* CLUArraySignature = "ptr:data, short:size, int:type, int:element_size, ptr
 // args : as many arguments as the C function is expecting
 // 
 // returns : Whatever the C function is registered to return
+#if defined(_WIN64) || defined(CLU_USE_LIBFFI)
+int CLU_HandlerFFI(lua_State* vm);
+#endif
+
 int Handler(lua_State* vm)
 {
+#if defined(_WIN64) || defined(CLU_USE_LIBFFI)
+    return CLU_HandlerFFI(vm);
+#else
 	char*			fName;
 	int				fIndex;		//functions index
 	CStack*			stack;
@@ -94,6 +101,7 @@ int Handler(lua_State* vm)
 	PopVM();	// Go back to our original virtual machine
 	
 return(funcs[fIndex]->numRetArgs);
+#endif
 }
 
 
@@ -262,7 +270,7 @@ void* PopInitArrayTable(int type, int* n)
 			ThrowLuaError(virtualMachine);
 		}
 
-		memcpy( (void*)((int)ret + ((i-1)*dataSize)), tmp, dataSize);
+		memcpy( (void*)((char*)ret + ((i-1)*dataSize)), tmp, dataSize);
 
 		SAFE_FREE(tmp);
 	}
@@ -389,7 +397,7 @@ int	Array_Get(lua_State* vm)
 	}
 
 	PushVM(vm);
-		CToLuaData(a->type, (void*)((int)a->data + (a->elementSize*i)) );
+		CToLuaData(a->type, (void*)((char*)a->data + (a->elementSize*i)) );
 	PopVM();
 
 	SAFE_FREE(a);

@@ -51,7 +51,7 @@ short GetMaskType(short sValue)
 }
 
 // ��ͼ���̻ص�����, �˺����õ�֪ͨ��, ���ɵ�ͼ�ϵ����
-long CALLBACK TerrainNotice(int nFlag, int nSectionX, int nSectionY, unsigned long dwParam, MPTerrain* pThis)
+long CALLBACK TerrainNotice(int nFlag, int nSectionX, int nSectionY, ULONG_PTR dwParam, MPTerrain* pThis)
 {
 	long			nSectionObjCnt = 0;
 	SSceneObjInfo	infoex[MAX_MAP_SECTION_OBJ];
@@ -1443,7 +1443,7 @@ T_B
 	}
 	else if( strCmd=="th2" )
 	{
-		_asm int 3;
+		DebugBreak();
 	}
 	else if( strCmd=="th3" )
 	{

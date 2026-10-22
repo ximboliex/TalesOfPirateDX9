@@ -30,7 +30,7 @@ LW_STD_IMPLEMENTATION(lwxRenderCtrlVSVertexBlend_dx8);
 
 lwxRenderCtrlVSVertexBlend_dx8::lwxRenderCtrlVSVertexBlend_dx8()
 : mPixelShaderReload( false ),
-  mPixelShader( -1 )
+  mPixelShader( NULL )
 {
 }
 
@@ -39,6 +39,7 @@ LW_RESULT lwxRenderCtrlVSVertexBlend_dx8::Clone(lwIRenderCtrlVS** obj)
 {
     this_type* o = LW_NEW(this_type);
     *o = *this;
+    if (o->mPixelShader) o->mPixelShader->AddRef();
 
     *obj = o;
 
@@ -192,7 +193,7 @@ LW_RESULT lwxRenderCtrlVSVertexBlend_dx8::BeginSet(lwIRenderCtrlAgent* agent)
                 if (mPixelShader)
                 {
                     device->SetPixelShader(0);
-                    ((IDirect3DPixelShaderX*)mPixelShader)->Release();
+                    mPixelShader->Release();
                     mPixelShader = 0;
                 }
 
@@ -205,7 +206,7 @@ LW_RESULT lwxRenderCtrlVSVertexBlend_dx8::BeginSet(lwIRenderCtrlAgent* agent)
                 {
                     hr = device->CreatePixelShader(
                         (DWORD*)codeBuffer->GetBufferPointer(),
-                        (IDirect3DPixelShaderX**)&mPixelShader);
+                        &mPixelShader);
                 }
                 else
                 {
@@ -222,7 +223,7 @@ LW_RESULT lwxRenderCtrlVSVertexBlend_dx8::BeginSet(lwIRenderCtrlAgent* agent)
                 mPixelShaderReload = false;
             }
 
-            device->SetPixelShader((IDirect3DPixelShaderX*)mPixelShader);
+            device->SetPixelShader(mPixelShader);
         }
     }
 

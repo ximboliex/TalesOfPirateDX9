@@ -1352,7 +1352,7 @@ void	CMagicEff::Emission(int iID, D3DXVECTOR3* vBegin, D3DXVECTOR3* vEnd, int iT
 	}
 	catch(...)
 	{
-		__asm int 3;
+		DebugBreak();
 	}
 }
  

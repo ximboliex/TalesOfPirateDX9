@@ -427,7 +427,7 @@ int		CMPResManger::GetTextureID(const s_string &sName)
 	//	if (stricmp(sName.c_str(), _vecTexName[i].c_str()) == 0)
 	//		// Success
 	//	{
-	//		__asm int 3;
+	//		DebugBreak();
 	//		return (int)i;
 	//	}
 	//}
@@ -513,7 +513,7 @@ int		CMPResManger::GetMeshID(const s_string &sName)
 	//{
 	//	if (stricmp(sName.c_str(), _vecMeshName[i].c_str()) == 0)
 	//	{
-	//		__asm int 3;
+	//		DebugBreak();
 	//		// Success 
 	//		return (int)i;
 	//	}
@@ -683,7 +683,7 @@ int		CMPResManger::GetEffectID(const s_string &pszName)
 	//{
 	//	if (stricmp(_vecEffectName[i].c_str(), pszName.c_str()) == 0)
 	//	{
-	//		__asm int 3;
+	//		DebugBreak();
 	//		return (int)i;
 	//	}
 	//}
@@ -710,7 +710,7 @@ std::vector<I_Effect>&	CMPResManger::GetEffectByID( int iID)
 		char t_pszFile[MAX_PATH];
 		sprintf(t_pszFile, "%s\\%s",_pszEFFectPath,_vecEffectName[iID].c_str());
 
-		//__asm int 3;
+		//DebugBreak();
 		if(!LoadEffectFromFile(iID, t_pszFile))
 			return _vecEffectList[iID];
 		_vecEffectList[iID][0].setEffectName(_vecEffectName[iID]);
@@ -945,20 +945,20 @@ void CMPResManger::LoadTotalData()
 			if( count == 50 )
 			{
 				break;
-				//__asm int 3;
+				//DebugBreak();
 			}
 			else if( count == 200 )
 			{
-				//__asm int 3;
+				//DebugBreak();
 			}
 			else if( count == 300 )
 			{
-				//__asm int 3;
+				//DebugBreak();
 				break;
 			}
 			else if( count == 400 )
 			{
-				//__asm int 3;
+				//DebugBreak();
 			}
 		}
 

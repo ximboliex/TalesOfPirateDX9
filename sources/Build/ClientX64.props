@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Imported only by the client dependency graph; server builds are unchanged. -->
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+    <ClientSourceRoot>$(MSBuildThisFileDirectory)..\</ClientSourceRoot>
+    <ClientBuildFlavor>Release</ClientBuildFlavor>
+    <ClientBuildFlavor Condition="$([System.String]::Copy('$(Configuration)').Contains('Debug'))">Debug</ClientBuildFlavor>
+    <ClientBuildRoot>$(MSBuildThisFileDirectory)out\</ClientBuildRoot>
+    <ClientLibraryDir>$(ClientBuildRoot)lib\x64\$(ClientBuildFlavor)\</ClientLibraryDir>
+    <ClientBinaryDir>$(ClientBuildRoot)bin\x64\$(ClientBuildFlavor)\</ClientBinaryDir>
+    <ClientDependenciesRoot Condition="'$(ClientDependenciesRoot)'==''">$(ClientSourceRoot)Dependencies\x64\</ClientDependenciesRoot>
+    <ClientExternalLibraryDir>$(ClientDependenciesRoot)lib\$(ClientBuildFlavor)\</ClientExternalLibraryDir>
+    <ClientExternalIncludeDir>$(ClientDependenciesRoot)include\</ClientExternalIncludeDir>
+    <ClientD3DXIncludeDir Condition="'$(ClientD3DXIncludeDir)'==''">$(DXSDK_DIR)Include\</ClientD3DXIncludeDir>
+    <ClientD3DXLibraryDir Condition="'$(ClientD3DXLibraryDir)'==''">$(DXSDK_DIR)Lib\x64\</ClientD3DXLibraryDir>
+    <LibffiLibrary Condition="'$(LibffiLibrary)'==''">libffi.lib</LibffiLibrary>
+    <LibffiStatic Condition="'$(LibffiStatic)'==''">true</LibffiStatic>
+    <TargetName Condition="'$(MSBuildProjectName)'=='LIBDBC'">LIBDBC_CL</TargetName>
+    <TargetName Condition="'$(MSBuildProjectName)'=='LIBDBC' and '$(ClientBuildFlavor)'=='Debug'">LIBDBC_D_CL</TargetName>
+    <IntDir>$(ClientBuildRoot)obj\x64\$(ClientBuildFlavor)\$(MSBuildProjectName)\</IntDir>
+    <OutDir Condition="'$(ConfigurationType)'=='StaticLibrary'">$(ClientLibraryDir)</OutDir>
+    <OutDir Condition="'$(ConfigurationType)'!='StaticLibrary'">$(ClientBinaryDir)</OutDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ClientExternalIncludeDir);$(ClientSourceRoot)Libraries\CaLua\include;$(ClientSourceRoot)Libraries\Util\include;$(ClientSourceRoot)Libraries\common\include;$(ClientSourceRoot)Libraries\Server\sdk\include;$(ClientSourceRoot)Libraries\ICUHelper\inc;$(ClientSourceRoot)Libraries\icu\include;$(ClientSourceRoot)Libraries\EncLib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary Condition="'$(ClientBuildFlavor)'=='Debug'">MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(ClientBuildFlavor)'=='Release'">MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions Condition="'$(ClientBuildFlavor)'=='Debug'">_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <UndefinePreprocessorDefinitions Condition="'$(ClientBuildFlavor)'=='Debug'">NDEBUG;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ClientBuildFlavor)'=='Release'">NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <UndefinePreprocessorDefinitions Condition="'$(ClientBuildFlavor)'=='Release'">_DEBUG;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <TreatSpecificWarningsAsErrors>4302;4311;4312;%(TreatSpecificWarningsAsErrors)</TreatSpecificWarningsAsErrors>
+    </ClCompile>
+    <Link>
+      <!-- No fallback to the repository's Win32 import-library directories. -->
+      <AdditionalLibraryDirectories>$(ClientLibraryDir);$(ClientExternalLibraryDir);$(ClientD3DXLibraryDir)</AdditionalLibraryDirectories>
+      <TargetMachine>MachineX64</TargetMachine>
+      <ImportLibrary>$(ClientLibraryDir)$(TargetName).lib</ImportLibrary>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <IgnoreSpecificDefaultLibraries>libci.lib</IgnoreSpecificDefaultLibraries>
+    </Link>
+    <Lib>
+      <OutputFile>$(ClientLibraryDir)$(TargetName).lib</OutputFile>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64' and '$(MSBuildProjectName)'=='CaLua'">
+    <ClCompile>
+      <PreprocessorDefinitions Condition="'$(LibffiStatic)'=='true'">FFI_BUILDING;FFI_STATIC_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(LibffiLibrary);%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

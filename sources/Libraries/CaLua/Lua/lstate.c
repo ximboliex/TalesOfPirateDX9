@@ -110,6 +110,7 @@ static void f_luaopen (lua_State *L, void *ud) {
   g->nblocks = sizeof(lua_State) + sizeof(global_State);
   stack_init(L, L);  /* init stack */
   /* create default meta table with a dummy table, and then close the loop */
+  defaultmeta(L)->value.gc = NULL;
   defaultmeta(L)->tt = LUA_TTABLE;
   sethvalue(defaultmeta(L), luaH_new(L, 0, 0));
   hvalue(defaultmeta(L))->metatable = hvalue(defaultmeta(L));

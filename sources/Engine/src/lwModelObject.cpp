@@ -32,7 +32,7 @@ DWORD __tree_proc_play_pose(lwITreeNode* node, void* param)
     case MODELNODE_HELPER:
         break;
     default:
-        __asm int 3;
+        DebugBreak();
     }
 
     ret = TREENODE_PROC_RET_CONTINUE;
@@ -1452,7 +1452,7 @@ __ret:
 
 LW_RESULT lwHelperObj::GetLinkMatrix(lwMatrix44* mat, DWORD link_id)
 {
-    __asm int 3;
+    DebugBreak();
     return 0;
 }
 LW_RESULT lwHelperObj::Update()

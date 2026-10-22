@@ -45,26 +45,28 @@ void CLU_InitError()
 
 void CLU_ShutdownError()
 {
-	fflush(err);
-	fclose(err);
+	if (err) { fflush(err); fclose(err); err = NULL; }
 }
 
 
 void CLU_Error(char* d, ...)
 {
 	va_list arg;
-	
+    FILE* sink = err ? err : stderr;
 	va_start(arg, d);
 #ifdef CLU_NOISY_ERROR
+    va_list copy;
+    va_copy(copy, arg);
 	printf("%s",CLU_ERR_PREFIX);
-	vprintf(d,arg);
+	vprintf(d,copy);
+    va_end(copy);
 	printf("\n");
 #endif
-	fprintf(err,"%s",CLU_ERR_PREFIX);
-	vfprintf(err,d,arg);
-	fprintf(err,"\n");
+	fprintf(sink,"%s",CLU_ERR_PREFIX);
+	vfprintf(sink,d,arg);
+	fprintf(sink,"\n");
 	va_end(arg);
-	fflush(err);
+	fflush(sink);
 }
 
 
@@ -117,10 +119,10 @@ void CLU_InsertBuffer(void** in, int type, int sz, void* data, int where, int le
 	memcpy( tmp, *in, where);
 
 	// Insert data in spot
-	memcpy( (void*)((int)tmp + where), data, len);
+	memcpy( (void*)(tmp + where), data, len);
 
 	// Copy the rest of the data over
-	memcpy( (void*)((int)tmp + where + len), (void*)((int)*in + where), (sz - where));
+	memcpy( (void*)(tmp + where + len), (void*)((char*)*in + where), (sz - where));
 
 	SAFE_FREE(*in);
 	*in = tmp;
@@ -141,7 +143,7 @@ void CLU_SnipBuffer(void** in, int type, int sz, int loc, int len)
 	memcpy( (void*)tmp, *in, loc);
 
 	//Copy over part after ommission
-	memcpy( (void*)((int)tmp + loc), (void*)((int)(*in) + loc + len), sz - len - loc);
+	memcpy( (void*)(tmp + loc), (void*)((char*)*in + loc + len), sz - len - loc);
 
 	SAFE_FREE(*in);
 	*in = tmp;
@@ -171,7 +173,7 @@ int CLU_String_Concat(char** dst, char* src)
 	} else if (!*dst) {
 		*dst = CLU_String_Copy(src);
 	} else {
-		CLU_ExpandBuffer(dst, sizeof(char), strlen(*dst)+1, strlen(src));
+		CLU_ExpandBuffer((void**)dst, sizeof(char), strlen(*dst)+1, strlen(src));
 		strcat(*dst, src);
 	}
 	return(0);

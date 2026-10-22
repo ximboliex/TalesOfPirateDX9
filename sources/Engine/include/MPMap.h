@@ -32,7 +32,7 @@ struct MPActiveMapSection
 };
 class  MPMap;
 typedef long (CALLBACK* MAP_PROC)(int nFlag, int nSectionX, 
-								  int nSectionY, unsigned long dwParam,MPMap* pthis);
+								  int nSectionY, ULONG_PTR dwParam,MPMap* pthis);
 
 class ZRBlock;
 
@@ -254,8 +254,8 @@ private:
 	BOOL        UseShader();
 
 private:
-	DWORD       m_SkyDoomVertexShaderHandle;
-	DWORD       m_SkyDoomPixelShaderHandle;
+	IDirect3DVertexShaderX* m_SkyDoomVertexShaderHandle;
+	IDirect3DPixelShaderX* m_SkyDoomPixelShaderHandle;
 
 	BOOL						m_bSkyDoom{ FALSE };
 	float                       m_txMoveSpeed{ 0 };

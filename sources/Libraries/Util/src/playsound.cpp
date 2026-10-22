@@ -20,7 +20,7 @@ const char *ERROR_FILE = "error_sound";
 
 #include <stdexcept>
 using namespace std;
-#pragma warning(disable: 4311 4312)
+#include <stdint.h>
 #pragma comment(lib, "sdl.lib")
 #pragma comment(lib, "sdl_mixer.lib")
 
@@ -535,7 +535,7 @@ void dispatch_exit(int id)
 DWORD WINAPI play_mus_thread(LPVOID lpParameter)
     {
     DWORD ret;
-    int id = (int)lpParameter;
+    int id = static_cast<int>(reinterpret_cast<intptr_t>(lpParameter));
     HANDLE sig_cmd = sig_cmd_array[id];
     mus_dat_array[id].sig_exit = sig_exit;
 
@@ -821,7 +821,7 @@ bool mus_mgr_init(bool enable, DWORD_PTR dwValue)
 	for (i = MUS_ID_START; i <= MUS_ID_END; ++ i)
 	{
 		sig_cmd_array[i] = CreateEvent(NULL, FALSE, FALSE, NULL);
-		thrdpool[i] = CreateThread(NULL, 0, play_mus_thread, (LPVOID)i, 0, &tid);
+		thrdpool[i] = CreateThread(NULL, 0, play_mus_thread, reinterpret_cast<LPVOID>(static_cast<intptr_t>(i)), 0, &tid);
 		if( dwValue && INVALID_HANDLE_VALUE != thrdpool[i] )
 		{
 			SetThreadAffinityMask( thrdpool[i], dwValue );

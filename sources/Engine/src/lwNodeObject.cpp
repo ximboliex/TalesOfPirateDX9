@@ -1688,7 +1688,7 @@ __ret:
 
 LW_RESULT lwNodeHelper::GetLinkMatrix(lwMatrix44* mat, DWORD link_id)
 {
-    __asm int 3;
+    DebugBreak();
     return 0;
 }
 LW_RESULT lwNodeHelper::Update()
@@ -1753,7 +1753,7 @@ static DWORD __tree_proc_cullprimitive(lwITreeNode* node, void* param)
 
     if(obj->GetType() == NODE_PRIMITIVE)
     {
-        __asm { int 3 }
+        DebugBreak()
         //BYTE v = LW_SUCCEEDED(scn_mgr->CullPrimitive(obj)) ? 1 : 0;
         //obj->GetStateCtrl()->SetState(STATE_FRAMECULLING, v);
     }
@@ -2192,7 +2192,7 @@ DWORD __tree_proc_play_pose(lwITreeNode* node, void* param)
     case NODE_HELPER:
         break;
     default:
-        __asm int 3;
+        DebugBreak();
     }
 
     ret = TREENODE_PROC_RET_CONTINUE;

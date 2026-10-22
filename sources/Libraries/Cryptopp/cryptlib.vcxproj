@@ -55,6 +55,9 @@
   <PropertyGroup Label="PlatformToolset">
     <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
@@ -582,6 +585,7 @@
     <ClInclude Include="zinflate.h" />
     <ClInclude Include="zlib.h" />
   </ItemGroup>
+  <Import Project="..\..\Build\ClientX64.props" Condition="'$(Platform)'=='x64'" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />

@@ -1228,7 +1228,7 @@ LW_RESULT lwMesh::LoadSystemMemory()
     else if((_state & RES_STATE_INIT) == 0)
         goto __ret;
 
-    __asm { int 3 };
+    DebugBreak();
 
     //if(LW_FAILED(lwLoadMeshInfoFromResFile(&_mesh_info, &_res_file)))
     //    goto __ret;
@@ -2437,7 +2437,7 @@ __ret:
 }
 LW_RESULT lwMeshAgent::LoadMesh(const lwResFileMesh* info)
 {
-    __asm { int 3 }
+    DebugBreak()
 
     LW_RESULT ret = LW_RET_FAILED;
 
@@ -3705,7 +3705,7 @@ LW_RESULT lwResourceMgr::QueryMesh(DWORD* ret_id, const lwResFileMesh* rfm)
 			}
 			catch(...)
 			{
-				__asm int 3;
+				DebugBreak();
 			}
             obj_num -= 1;
         }

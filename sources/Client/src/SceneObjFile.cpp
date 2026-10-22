@@ -695,7 +695,7 @@ long CSceneObjFile::TrimDirectory(const char *ptcsDirectory, bool bBackUp)
 	char tcsFileName[_MAX_FNAME], tcsPath[_MAX_PATH];
 	size_t		lLen;
 	_finddata_t	c_file;
-	long		hFile;
+	intptr_t	hFile;
 	const char* ptcsRecordFile = "TrimRecord.txt";
 	FILE		*fRecord = NULL;
 	_timeb		tTimeBuffer;
@@ -727,7 +727,7 @@ long CSceneObjFile::TrimDirectory(const char *ptcsDirectory, bool bBackUp)
 	_ftprintf(fRecord, g_oLangRec.GetString(368), _tctime(&tTimeBuffer.time));
 
 	_stprintf(tcsFileName,"%s%s", tcsPath, "*.obj");
-	if( (hFile = (long)_tfindfirst(tcsFileName, &c_file)) == -1L )
+	if( (hFile = _tfindfirst(tcsFileName, &c_file)) == -1L )
 	{
 		fclose(fRecord);
 		return 1;

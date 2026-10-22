@@ -51,7 +51,7 @@
 
 /* function to convert a lua_Number to int (with any rounding method) */
 #ifndef lua_number2int
-#define lua_number2int(i,n)	((i)=(int)(n))
+#define lua_number2int(i,n) ((i) = ((n) >= INT_MIN && (n) <= INT_MAX) ? (int)(n) : 0)
 #endif
 
 
@@ -327,7 +327,7 @@ static void rehash (lua_State *L, Table *t) {
 Table *luaH_new (lua_State *L, int narray, int lnhash) {
   Table *t = luaM_new(L, Table);
   luaC_link(L, valtogco(t), LUA_TTABLE);
-  t->metatable = hvalue(defaultmeta(L));
+  t->metatable = defaultmeta(L)->value.gc ? hvalue(defaultmeta(L)) : NULL;
   t->flags = cast(lu_byte, ~0);
   /* temporary values (kept only if some malloc fails) */
   t->array = NULL;

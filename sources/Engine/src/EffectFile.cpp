@@ -10,6 +10,7 @@
 #include "EffectFile.h"
 //#include "DXUtil.h"
 #include "MPRender.h"
+#include <memory>
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -48,43 +49,31 @@ void CMPEffectFile::InitDev(LPDIRECT3DDEVICE8 pDev)
     m_pDev = pDev;
 }
 
-BOOL CMPEffectFile::LoadEffectFromFile( LPCSTR pszfile)
+BOOL CMPEffectFile::LoadEffectFromFile(LPCSTR file)
 {
-	HRESULT hr;
-#ifdef USE_RENDER
-	if(FAILED( hr = D3DXCreateEffectFromFile(m_pDev->GetDevice(),pszfile,NULL,NULL,0,NULL,&m_pEffect,NULL)))
-#else
-	if(FAILED( hr = D3DXCreateEffectFromFile(m_pDev,pszfile,&m_pEffect,NULL)))
-#endif
-	{
-		return FALSE;
-	}
-
-	D3DXHANDLE   technique;
-
-	//if (FAILED(m_pEffect->FindNextValidTechnique(NULL, &technique)))
-	//{
-	//	return FALSE;
-	//}
-	//_vecTechniques.push_back(technique);
-	//_iTechNum++;
-
-	//_DbgOut( " technique.Name", _iTechNum, S_OK,  (TCHAR*)technique.Name );
-
-	char t_psz[4];
-	strcpy(t_psz, "t0");
-	while(SUCCEEDED(m_pEffect->FindNextValidTechnique(t_psz, &technique)))
-	{
-		_vecTechniques.push_back(technique);
-		_iTechNum++;
-		//_DbgOut( " technique.Name", _iTechNum, S_OK,  (TCHAR*)technique.Name );
-
-		sprintf(t_psz,"t%d",_iTechNum);
-	}
-	//_DbgOut( " technique.Name", _iTechNum, S_OK,  (TCHAR*)technique.Name );
-
-
-	return TRUE;
+    if(!m_pDev || !m_pDev->GetDevice() || !file) return FALSE;
+    ID3DXEffect* loaded = NULL;
+    HRESULT hr = D3DXCreateEffectFromFile(m_pDev->GetDevice(), file, NULL, NULL, 0, NULL, &loaded, NULL);
+    const auto release = [](ID3DXEffect* effect) { if(effect) effect->Release(); };
+    std::unique_ptr<ID3DXEffect, decltype(release)> effect(loaded, release);
+    if(FAILED(hr) || !loaded) return FALSE;
+    D3DXEFFECT_DESC description;
+    if(FAILED(effect->GetDesc(&description)) || description.Techniques == 0) return FALSE;
+    std::vector<D3DXHANDLE> techniques;
+    techniques.reserve(description.Techniques);
+    for(UINT i = 0; i < description.Techniques; ++i)
+    {
+        D3DXHANDLE technique = effect->GetTechnique(i);
+        if(!technique) return FALSE;
+        techniques.push_back(technique);
+    }
+    // Keep the previous effect intact if compilation/inspection failed. Numeric
+    // technique indices now correspond to the file, including its first t0.
+    free();
+    m_pEffect = effect.release();
+    _vecTechniques.swap(techniques);
+    _iTechNum = static_cast<int>(_vecTechniques.size());
+    return TRUE;
 }
 
 //BOOL CMPEffectFile::LoadEffectFromResource(TCHAR*  pszsrc)
@@ -140,7 +129,9 @@ BOOL CMPEffectFile::LoadEffectFromFile( LPCSTR pszfile)
 
 void CMPEffectFile::free()
 {
+    _passState.End(m_pEffect);
 	SAFE_RELEASE(m_pEffect);
+    m_passes = 0;
 	_vecTechniques.clear();
 	_iTechNum = 0;
 	_dwVShader = 0;
@@ -153,6 +144,7 @@ void CMPEffectFile::free()
 
 BOOL CMPEffectFile::OnLostDevice()
 {
+    _passState.End(m_pEffect);
     if(m_pEffect)
 	{
 		if(FAILED(m_pEffect->OnLostDevice()))

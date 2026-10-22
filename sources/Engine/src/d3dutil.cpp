@@ -141,21 +141,22 @@ HRESULT D3DUtil_SetColorKey( IDirect3DTextureX* pTexture, DWORD dwColorKey )
 //-----------------------------------------------------------------------------
 HRESULT D3DUtil_CreateVertexShader( IDirect3DDeviceX* pd3dDevice, 
                                     TCHAR* strFilename, DWORD* pdwVertexDecl,
-                                    DWORD* pdwVertexShader )
+                                    IDirect3DVertexShaderX** vertexShader )
 {
-    LPD3DXBUFFER pCode;
-    TCHAR        strPath[MAX_PATH];
-    HRESULT      hr;
+    if (!pd3dDevice || !strFilename || !vertexShader) return E_INVALIDARG;
+    *vertexShader = NULL;
+    LPD3DXBUFFER pCode = NULL;
+    HRESULT hr;
 
     // Get the path to the vertex shader file
     //DXUtil_FindMediaFile( strPath, strFilename );
 
     // Assemble the vertex shader file
-    if( FAILED( hr = D3DXAssembleShaderFromFile( strPath, NULL, NULL, 0, &pCode, NULL ) ) )
+    if( FAILED( hr = D3DXAssembleShaderFromFile( strFilename, NULL, NULL, 0, &pCode, NULL ) ) )
         return hr;
 
     // Create the vertex shader
-    hr = pd3dDevice->CreateVertexShader((DWORD*)pCode->GetBufferPointer(), (IDirect3DVertexShaderX**)pdwVertexShader);
+    hr = pd3dDevice->CreateVertexShader((DWORD*)pCode->GetBufferPointer(), vertexShader);
     pCode->Release();
     return hr;
 }

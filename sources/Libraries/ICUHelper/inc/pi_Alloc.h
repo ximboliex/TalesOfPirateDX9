@@ -8,6 +8,7 @@
 #include <cstdlib>	// declares _MAX_PATH
 #endif
 
+#include <stdint.h>
 #include <list>
 #include <string>
 
@@ -25,15 +26,15 @@
 #define cnew new(pi_Alloc::allocate,  __FILE__, __LINE__)
 
 #define cdelete(pointer) (pi_Alloc::deallocate((void*)pointer))
-#define cdestroy(classname, pointer) (##classname::destroy##classname(pointer))
+#define cdestroy(classname, pointer) (classname::destroy##classname(pointer))
 
 #define IMPLEMENT_CDELETE(classname)\
 	public:\
-		static inline void destroy##classname(##classname* p##classname)\
+		static inline void destroy##classname(classname* p##classname)\
 		{\
 			if(pi_Alloc::isAllocated(p##classname))\
 			{\
-				p##classname->~##classname();\
+				p##classname->~classname();\
 			}\
 			pi_Alloc::deallocate(p##classname);\
 		}
@@ -59,7 +60,7 @@ public:
 	static void deallocate(void* addr);
 	static int isAllocated(void* addr);
 	static int numBlocks();
-	static int numBytes();
+	static size_t numBytes();
 };
 
 #ifdef LOG_POSITION
@@ -71,6 +72,16 @@ inline void *operator new(size_t size, void *(*f)(size_t, pi_Alloc*, const char*
 inline void *operator new[](size_t size, void *(*f)(size_t, pi_Alloc*, const char*, int), const char* fileName = __FILE__, int lineNo = __LINE__)
 {
 	return (*f)(size, (pi_Alloc *)0, fileName, lineNo);
+}
+
+// Matching placement deletes are required if a constructor throws after cnew.
+inline void operator delete(void* pointer, void *(*)(size_t, pi_Alloc*, const char*, int), const char*, int) noexcept
+{
+	pi_Alloc::deallocate(pointer);
+}
+inline void operator delete[](void* pointer, void *(*)(size_t, pi_Alloc*, const char*, int), const char*, int) noexcept
+{
+	pi_Alloc::deallocate(pointer);
 }
 #else
 inline void *operator new(size_t size, void *(*f)(int, pi_Alloc*))
@@ -89,7 +100,7 @@ class pi_LeakReporter
 public:
 	typedef struct pi_LeakItem
 	{
-		int addr;
+		void* addr;
 		char fileName[_MAX_PATH];
 		int d_lineNo;
 		size_t d_size;

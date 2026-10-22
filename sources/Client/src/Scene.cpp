@@ -1824,7 +1824,7 @@ bool CGameScene::LoadMap(const char* file)
 	_pTerrain = std::make_unique<MPTerrain>();
 	// g_ObjInfluence.SetTerrain( _pTerrain );
 
-	extern long CALLBACK TerrainNotice(int nFlag, int nSectionX, int nSectionY, unsigned long dwParam, MPTerrain* pThis);
+	extern long CALLBACK TerrainNotice(int nFlag, int nSectionX, int nSectionY, ULONG_PTR dwParam, MPTerrain* pThis);
 	_pTerrain->SetMapProcFN(TerrainNotice);
 	string map = strMapFile + ".map";
 	map = "map/" + map;
@@ -2019,7 +2019,7 @@ int CGameScene::UpdateSceneAnimLight()
         // update lighting animation 
         if(s->type != SceneLight::SL_LIGHT)
         {
-            __asm int 3;
+            DebugBreak();
         }
 
         if(s->UpdateAnimLight())

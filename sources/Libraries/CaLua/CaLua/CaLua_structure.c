@@ -11,6 +11,31 @@
 #include "CaLua_guts.h"
 
 
+
+#if defined(_WIN64) || defined(CLU_USE_LIBFFI)
+static int CLU_TypeAlignment(int type)
+{
+    int alignment = 1, i;
+    if (CLU_IS_STRUCTURE(type))
+    {
+        StructForm* s = structs[CLU_TYPE_TO_INDEX(type)];
+        for (i = 0; i < s->numMembers; ++i)
+        {
+            int member = CLU_TypeAlignment(s->memberType[i]);
+            if (member > alignment) alignment = member;
+        }
+    }
+    else alignment = GetDataSize(type);
+    if (alignment > __STRUCTURE_MEMBER_ALIGNMENT) alignment = __STRUCTURE_MEMBER_ALIGNMENT;
+    return alignment > 0 ? alignment : 1;
+}
+
+static int CLU_Align(int offset, int alignment)
+{
+    return (offset + alignment - 1) / alignment * alignment;
+}
+#endif
+
 int NextAlignment(int offset, int type)
 {
 	int typeSize;
@@ -31,6 +56,25 @@ return(offset);
 // data types for the data D.A
 void* Pack(int nElements, void** data, int* type)
 {
+#if defined(_WIN64) || defined(CLU_USE_LIBFFI)
+    int i, offset = 0, alignment = 1;
+    char* result;
+    for (i = 0; i < nElements; ++i)
+    {
+        int a = CLU_TypeAlignment(type[i]);
+        if (a > alignment) alignment = a;
+        offset = CLU_Align(offset, a) + GetDataSize(type[i]);
+    }
+    result = CLU_Calloc(CLU_Align(offset, alignment));
+    offset = 0;
+    for (i = 0; i < nElements; ++i)
+    {
+        offset = CLU_Align(offset, CLU_TypeAlignment(type[i]));
+        memcpy(result + offset, data[i], GetDataSize(type[i]));
+        offset += GetDataSize(type[i]);
+    }
+    return result;
+#else
 	char* ret = NULL;
 	int buffSize;
 	int i;
@@ -51,6 +95,7 @@ void* Pack(int nElements, void** data, int* type)
 	}
 
 return(ret);
+#endif
 }
 
 //\\ Returns the next alignment position from 'offset', that is divisible by 'align' 
@@ -95,6 +140,18 @@ return(ret);
 //\\ taking into account compiler and natural alignment settings.
 int ComputeStructureAlignment(StructForm* s)
 {
+#if defined(_WIN64) || defined(CLU_USE_LIBFFI)
+    int i, offset = 0, previous = 0;
+    s->NextMemberOffset = CLU_Calloc(sizeof(int) * s->numMembers);
+    for (i = 0; i < s->numMembers; ++i)
+    {
+        offset = CLU_Align(offset, CLU_TypeAlignment(s->memberType[i]));
+        if (i) s->NextMemberOffset[i - 1] = offset - previous;
+        previous = offset;
+        offset += s->memberSize[i];
+    }
+    return 0;
+#else
 	int curMem;			// Current member
 	int nextAvail;		// Next available address to possibly store data
 	int lastPos;		// Position in absolute offset space, of last data member...
@@ -108,7 +165,7 @@ int ComputeStructureAlignment(StructForm* s)
 	//Go through every member except the last
 	while(curMem < (s->numMembers-1))
 	{
-		CLU_ExpandBuffer( (void**)&s->NextMemberOffset, sizeof(int*), curMem, 1);
+		CLU_ExpandBuffer( (void**)&s->NextMemberOffset, sizeof(int), curMem, 1);
 		
 		nextAvail = lastPos + s->memberSize[curMem]; //Skip over the size of this data element...
 		
@@ -121,11 +178,12 @@ int ComputeStructureAlignment(StructForm* s)
 		curMem++;
 	}
 
-	CLU_ExpandBuffer( (void**)&s->NextMemberOffset, sizeof(int*), curMem, 1);
+	CLU_ExpandBuffer( (void**)&s->NextMemberOffset, sizeof(int), curMem, 1);
 	
 	s->NextMemberOffset[curMem] = 0; //Last member has no offset.... eee... it's just assumed it won't be used in any stupid calculation
 
 return(0);
+#endif
 }
 
 
@@ -142,6 +200,17 @@ int ComputeStructureSize(StructForm* s)
 
 	sz += s->memberSize[i-1]; 
 
+#if defined(_WIN64) || defined(CLU_USE_LIBFFI)
+    {
+        int alignment = 1;
+        for (i = 0; i < s->numMembers; ++i)
+        {
+            int a = CLU_TypeAlignment(s->memberType[i]);
+            if (a > alignment) alignment = a;
+        }
+        sz = CLU_Align(sz, alignment);
+    }
+#endif
 return(sz);
 }
 

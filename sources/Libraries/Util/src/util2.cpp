@@ -527,7 +527,7 @@ void ProcessDirectory(const char *pszDir, std::list<std::string>* pFileList, int
         strcat(szSearch , "/*.*");
     }
 
-    int hnd = _findfirst(szSearch , &filestruct);
+    intptr_t hnd = _findfirst(szSearch , &filestruct);
     if(hnd==-1) 
     {
         return;

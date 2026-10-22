@@ -101,6 +101,9 @@ MPMap::~MPMap()
     delete[] _pVertBuf;
 #endif
     SAFE_RELEASE(_pLandVB);
+    SAFE_RELEASE(m_SkyDoomVertexShaderHandle);
+    SAFE_RELEASE(m_SkyDoomPixelShaderHandle);
+    SAFE_DELETE_ARRAY(m_pSkyDoomVB);
 }
 
 void MPMap::FrameMove(DWORD dwTimeParam)
@@ -1526,7 +1529,7 @@ void MPMap::CreateSkyDoom(D3DXVECTOR3 center, float radius, char* txPath, bool h
 			sprintf(Path,"shader\\vs_skydoom.vsh");
 			if(SUCCEEDED(D3DXAssembleShaderFromFile( Path, NULL, NULL, 0, &pCode, &pError )))
 			{
-				if(FAILED(dev->CreateVertexShader((DWORD*)pCode->GetBufferPointer(),(IDirect3DVertexShaderX**)&m_SkyDoomVertexShaderHandle)))
+				if(FAILED(dev->CreateVertexShader((DWORD*)pCode->GetBufferPointer(),&m_SkyDoomVertexShaderHandle)))
 				{
 					m_SkyDoomVertexShaderHandle = 0;			
 					MessageBox( 0,"Failed To Create Vertex Shader","D3DXAssembleShaderFromFile For Vertex Shader Failed",0);
@@ -1562,7 +1565,7 @@ void MPMap::CreateSkyDoom(D3DXVECTOR3 center, float radius, char* txPath, bool h
 			sprintf(Path,"shader\\ps_skydoom.psh");
 			if(SUCCEEDED(D3DXAssembleShaderFromFile(Path, NULL, NULL, 0, &pCode, &pError )))
 			{
-				if(FAILED(dev->CreatePixelShader((DWORD*)pCode->GetBufferPointer(),(IDirect3DPixelShaderX**)&m_SkyDoomPixelShaderHandle)))
+				if(FAILED(dev->CreatePixelShader((DWORD*)pCode->GetBufferPointer(),&m_SkyDoomPixelShaderHandle)))
 				{
 					m_SkyDoomPixelShaderHandle = 0;			
 					MessageBox( 0,"Failed To Create Pixel Shader","D3DXAssembleShaderFromFile For Pixel Shader Failed",0);
@@ -1608,8 +1611,8 @@ void MPMap::CreateSkyDoom(D3DXVECTOR3 center, float radius, char* txPath, bool h
 		D3DXMatrixTranspose( &mat, &mat );
 		dev->SetVertexShaderConstantF(0,mat,4);
 		dev->SetVertexShaderConstantF(4,D3DXVECTOR4(0,(m_txMoveSpeed-=1.0f)/10000*SKYDOOM_TEXTURE_MOVESPEED,0,0),1); //add by jze pass current frame number to vertex shader 
-		dev->SetVertexShader((IDirect3DVertexShaderX*)m_SkyDoomVertexShaderHandle);
-		dev->SetPixelShader((IDirect3DPixelShaderX*)m_SkyDoomPixelShaderHandle);
+		dev->SetVertexShader(m_SkyDoomVertexShaderHandle);
+		dev->SetPixelShader(m_SkyDoomPixelShaderHandle);
 
 		lwIDynamicStreamMgr* dsm = g_Render.GetInterfaceMgr()->res_mgr->GetDynamicStreamMgr();
 		dsm->BindDataVB(0, m_pSkyDoomVB, sizeof(MPSkyDoomVertex)*VertNum, sizeof(MPSkyDoomVertex));

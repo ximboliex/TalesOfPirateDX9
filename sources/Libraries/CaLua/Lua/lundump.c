@@ -23,6 +23,7 @@ typedef struct {
  ZIO* Z;
  Mbuffer* b;
  int swap;
+ int size_size;
  const char* name;
 } LoadState;
 
@@ -83,9 +84,17 @@ static int LoadInt (LoadState* S)
 
 static size_t LoadSize (LoadState* S)
 {
- size_t x;
- LoadBlock(S,&x,sizeof(x));
- return x;
+ uint64_t x;
+ if (S->size_size == 4)
+ {
+  uint32_t value;
+  LoadBlock(S, &value, sizeof(value));
+  return (size_t)value;
+ }
+ LoadBlock(S, &x, sizeof(x));
+ if (x > (uint64_t)(size_t)-1)
+  luaG_runerror(S->L, "string size overflow in %s", S->name);
+ return (size_t)x;
 }
 
 static lua_Number LoadNumber (LoadState* S)
@@ -239,7 +248,9 @@ static void LoadHeader (LoadState* S)
 	S->name,V(version),V(VERSION0));
  S->swap=(luaU_endianness()!=LoadByte(S));	/* need to swap bytes? */
  TESTSIZE(sizeof(int),"int");
- TESTSIZE(sizeof(size_t), "size_t");
+ S->size_size = LoadByte(S);
+ if (S->size_size != 4 && S->size_size != 8)
+  luaG_runerror(S->L, "unsupported serialized size_t width in %s", S->name);
  TESTSIZE(sizeof(Instruction), "Instruction");
  TESTSIZE(SIZE_OP, "OP");
  TESTSIZE(SIZE_A, "A");

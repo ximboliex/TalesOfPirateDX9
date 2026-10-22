@@ -8,6 +8,7 @@
 //\\//\\//\\//\\//\\//\\//\\//\\////\\//\\//\\//\\//\\//\\//\\//\\////\\//\\//\\//\\*/
 
 #include "CaLua_guts.h"
+#include <stdint.h>
 
 #define NUMTYPES	9
 
@@ -319,6 +320,7 @@ void* CLU_CallScriptFunction(const char* funcName, const char* retArgs, const ch
 {
 	va_list par;
 	int numArgs;
+    int stackBase = lua_gettop(virtualMachine);
 	int status;
 	int nToken;
 	int nReturns;
@@ -337,6 +339,7 @@ void* CLU_CallScriptFunction(const char* funcName, const char* retArgs, const ch
 	{
 		CLU_Error("Function %s does not exist\n",funcName);
 		va_end(par);
+        lua_settop(virtualMachine, stackBase);
 		return(NULL);
 	}
 		
@@ -350,7 +353,9 @@ void* CLU_CallScriptFunction(const char* funcName, const char* retArgs, const ch
 			dataType = GetDataType(tok);
 			nToken++;
 
-			switch(CLU_C_BASE_TYPE(dataType))
+            if (CLU_IS_POINTER(dataType) && CLU_C_BASE_TYPE(dataType) != CLU_STRING)
+                lua_pushlightuserdata(virtualMachine, va_arg(par, void*));
+            else switch(CLU_C_BASE_TYPE(dataType))
 			{
 			case CLU_CHAR :								// C89 says that chars are promoted to integers
 				{					
@@ -362,7 +367,8 @@ void* CLU_CallScriptFunction(const char* funcName, const char* retArgs, const ch
 				}break;
 			case CLU_INT :
 				{	
-					lua_pushnumber(virtualMachine,(double)va_arg(par, int));
+					if (CLU_IS_UNSIGNED(dataType)) lua_pushnumber(virtualMachine, (double)va_arg(par, unsigned int));
+                    else lua_pushnumber(virtualMachine, (double)va_arg(par, int));
 				}break;
 			case CLU_FLOAT :					// C89 states that floats are promoted as doubles
 				{
@@ -385,6 +391,8 @@ void* CLU_CallScriptFunction(const char* funcName, const char* retArgs, const ch
 												// but, this is safer...
 				CLU_Error("Unknown type : %s",tok);
 				va_end(par);
+                SAFE_FREE(tok);
+                lua_settop(virtualMachine, stackBase);
 				return(NULL);
 			}break;
 			default :				//Must be a registered structure
@@ -395,8 +403,22 @@ void* CLU_CallScriptFunction(const char* funcName, const char* retArgs, const ch
 					}
 					else
 					{
-						PushStructure( CLU_TYPE_TO_INDEX(dataType), (void*)par);
-						par += structs[CLU_TYPE_TO_INDEX(dataType)]->size;
+						#if defined(_WIN64) || defined(CLU_USE_LIBFFI)
+                        // Win64 passes small aggregates in one 8-byte slot;
+                        // larger aggregates are passed by address.
+                        {
+                            int bytes = structs[CLU_TYPE_TO_INDEX(dataType)]->size;
+                            if (bytes == 1 || bytes == 2 || bytes == 4 || bytes == 8)
+                            {
+                                uintptr_t value = va_arg(par, uintptr_t);
+                                PushStructure(CLU_TYPE_TO_INDEX(dataType), &value);
+                            }
+                            else PushStructure(CLU_TYPE_TO_INDEX(dataType), va_arg(par, void*));
+                        }
+#else
+                        PushStructure(CLU_TYPE_TO_INDEX(dataType), (void*)par);
+                        par += structs[CLU_TYPE_TO_INDEX(dataType)]->size;
+#endif
 					}
 				}break;
 			}
@@ -413,10 +435,12 @@ void* CLU_CallScriptFunction(const char* funcName, const char* retArgs, const ch
 	if(status)
 	{
 		CLU_Error("Error calling function %s : \n %s\n", funcName, lua_tostring(virtualMachine, -1));
+        lua_settop(virtualMachine, stackBase);
 		return(NULL);
 	}
 
-	ret = PopValuesBySig(retArgs);
+	ret = PopValuesBySig((char*)retArgs);
+    lua_settop(virtualMachine, stackBase);
 		
 return(ret);
 }
@@ -544,7 +568,7 @@ int CLU_RegisterFunction(const char* name, const char* ret, const char* args, in
 		}
 	}
 
-	CLU_ExpandBuffer(&funcs[numFuncs]->passType, sizeof(int*), 0, funcs[numFuncs]->numPassArgs);
+	CLU_ExpandBuffer((void**)&funcs[numFuncs]->passType, sizeof(int), 0, funcs[numFuncs]->numPassArgs);
 
 	for(i=1; i <= funcs[numFuncs]->numPassArgs; i++)
 	{

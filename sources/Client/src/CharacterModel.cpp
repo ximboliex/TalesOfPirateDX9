@@ -1324,7 +1324,7 @@ MPIPoseCtrl* CCharacterModel::GetPoseCtrl()
         c = MPCharacter::GetObjImpPoseCtrl(1, ANIM_CTRL_TYPE_MAT);
         break;
     default:
-        __asm int 3;
+        DebugBreak();
         break;
     }
 

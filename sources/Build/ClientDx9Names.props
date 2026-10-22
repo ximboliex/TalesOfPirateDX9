@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- These properties must exist BEFORE project item definitions expand them. -->
+  <PropertyGroup>
+    <Dx9EngineLibrary>MindPower3D_D9R.lib</Dx9EngineLibrary>
+    <Dx9EngineLibrary Condition="'$(Configuration)'=='Debug'">MindPower3D_D9D.lib</Dx9EngineLibrary>
+    <TargetName Condition="'$(MSBuildProjectName)'=='MindPower3D'">MindPower3D_D9R</TargetName>
+    <TargetName Condition="'$(MSBuildProjectName)'=='MindPower3D' and '$(Configuration)'=='Debug'">MindPower3D_D9D</TargetName>
+    <TargetName Condition="'$(MSBuildProjectName)'=='kop'">Game</TargetName>
+    <TargetName Condition="'$(MSBuildProjectName)'=='kop' and '$(Configuration)'=='Debug'">Game_D</TargetName>
+  </PropertyGroup>
+</Project>

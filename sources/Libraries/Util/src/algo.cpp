@@ -1,6 +1,7 @@
 
 #include "util.h"
 #include "algo.h"
+#include "ByteTransforms.h"
 #include "md5.h"
 
 using namespace std;
@@ -361,78 +362,14 @@ EXIT:
         ret}}
 #endif
 
-bool INL NKD rol_byte_off(unsigned char* pb, unsigned int offset, unsigned char bits)
-    {
-    __asm {
-        push ebx
-        push ecx
-        push esi
-        mov ecx, [esp + 24] ;bits
-        cmp cl, 8
-        jl L1
-        xor eax, eax
-        jmp EXIT
+bool rol_byte_off(unsigned char* pb, unsigned int offset, unsigned char bits)
+{ return ByteTransforms::RotateLeft(pb, offset, bits); }
 
-L1:
-        mov ebx, [esp + 16] ;pb
-        mov esi, [esp + 20] ;offset
-        mov al, byte ptr [ebx + esi] ;*(pb + offset)
-        rol al, cl
-        mov byte ptr [ebx + esi], al
-        mov eax, 1
+bool ror_byte_off(unsigned char* pb, unsigned int offset, unsigned char bits)
+{ return ByteTransforms::RotateRight(pb, offset, bits); }
 
-EXIT:
-        pop esi
-        pop ecx
-        pop ebx
-        ret
-        }}
-
-bool INL NKD ror_byte_off(unsigned char* pb, unsigned int offset, unsigned char bits)
-    {
-    __asm {
-        push ebx
-        push ecx
-        push esi
-        mov ecx, [esp + 24] ;bits
-        cmp cl, 8
-        jl L1
-        xor eax, eax
-        jmp EXIT
-
-L1:
-        mov ebx, [esp + 16] ;pb
-        mov esi, [esp + 20] ;offset
-        mov al, byte ptr [ebx + esi] ;*(pb + offset)
-        ror al, cl
-        mov byte ptr [ebx + esi], al
-        mov eax, 1
-
-EXIT:
-        pop esi
-        pop ecx
-        pop ebx
-        ret
-        }}
-
-bool INL NKD xor_byte_off(unsigned char* pb, unsigned int offset, unsigned char mask)
-    { // xor a byte from a pb and a offset
-    __asm {
-        push ebx
-        push ecx
-        push esi
-        mov ebx, [esp + 16] ;pb
-        mov esi, [esp + 20] ;offset
-        mov al, byte ptr [ebx + esi] ;*(pb + offset)
-        mov ecx, [esp + 24] ;mask
-        xor al, cl
-        mov byte ptr [ebx + esi], al
-        pop esi
-        pop ecx
-        pop ebx
-        mov eax, 1
-        ret
-        }}
+bool xor_byte_off(unsigned char* pb, unsigned int offset, unsigned char mask)
+{ return ByteTransforms::Xor(pb, offset, mask); }
 
 
 #if 1

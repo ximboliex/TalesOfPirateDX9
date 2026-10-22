@@ -149,3 +149,11 @@ ServerSide/GroupServer/GroupServer*.exe
 Phoenix Online/log*/
 DatabasePath/GameDtopnet64.mdf
 DatabasePath/GameDtopnet64_log.ldf
+
+# Lua standard library source, not generated linker output.
+!sources/Libraries/CaLua/Lua/lib/
+!sources/Libraries/CaLua/Lua/lib/**
+sources/Build/out/
+sources/Dependencies/
+sources/Build/**/__pycache__/
+sources/Build/__pycache__/

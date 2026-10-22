@@ -36,10 +36,11 @@
 #include <string>
 
 #include <windows.h>
+#include <eh.h>
 
 // Only valid in the following environment: Intel platform, MS VC++ 5/6/7
-#ifndef _X86_
-#error Only INTEL envirnoments are supported!
+#if !defined(_M_IX86) && !defined(_M_X64)
+#error Stack tracing supports Windows x86 and AMD64.
 #endif
 
 // Only MS VC++ 5 to 7
@@ -100,7 +101,7 @@ protected:
 public:
 	TraceableException(const std::string &what);
 	~TraceableException() {}
-	const char* what() const;
+	const char* what() const noexcept override;
 
 protected:
 	TraceableException(const std::string &what, EXCEPTION_POINTERS *ep);
@@ -118,7 +119,7 @@ private:
 public:
 	SystemException(DWORD id, EXCEPTION_POINTERS *ep);
 
-	const char* what() const;
+	const char* what() const noexcept override;
 
 	std::string name() const { return SEHTranslator::name(mId); };
 	std::string description() const { return SEHTranslator::description(mId); };

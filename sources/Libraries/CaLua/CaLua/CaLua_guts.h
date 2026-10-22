@@ -20,8 +20,8 @@
 // C data types
 //////
 
-#define CLU_POINTER_BIT		(1<<31)
-#define CLU_UNSIGNED_BIT	(1<<30)
+#define CLU_POINTER_BIT		(1u<<31)
+#define CLU_UNSIGNED_BIT	(1u<<30)
 #define CLU_TYPE_FIELD 0x3FFFFF
 
 #define CLU_UNKNOWN		0

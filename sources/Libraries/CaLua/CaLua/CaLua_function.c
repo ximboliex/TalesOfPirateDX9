@@ -52,6 +52,8 @@ return(0);
 
 //\\ Prepare's a CStack by popping 'args' off the stack 'vm'
 //\\ args can take on the form of any C data type, or a registered structure
+
+#if !defined(_WIN64) && !defined(CLU_USE_LIBFFI)
 CStack* PrepareStack(int rFunc)
 {
 	StackData*	stackData;
@@ -69,8 +71,8 @@ CStack* PrepareStack(int rFunc)
 	i = 2;						// Start at argument 2, since the first argument was popped in Handler()
 	while( i <= lastArg)
 	{
-		CLU_ExpandBuffer(&(void*)stackData->data, sizeof(void*), stackData->numArgs,1);
-		CLU_ExpandBuffer(&stackData->dataSize, sizeof(int*), stackData->numArgs,1);
+		CLU_ExpandBuffer((void**)&stackData->data, sizeof(void*), stackData->numArgs,1);
+		CLU_ExpandBuffer(&stackData->dataSize, sizeof(int), stackData->numArgs,1);
 
 		stackData->data[stackData->numArgs] = ConvertLuaStackData( i, funcs[rFunc]->passType[i-2], &stackData->dataSize[stackData->numArgs]);
 
@@ -94,7 +96,7 @@ CStack* PrepareStack(int rFunc)
 	if(CLU_IS_STRUCTURE(funcs[rFunc]->retType))
 	{
 		CLU_ExpandBuffer( &ret->data, sizeof(void*), ret->dataLength, sizeof(void*));
-		((void*)((int*)ret->data)[0]) = CLU_Calloc(GetDataSize(funcs[rFunc]->retType));
+		*((void**)ret->data) = CLU_Calloc(GetDataSize(funcs[rFunc]->retType));
 		ret->dataLength += 4;
 	}
 	for(i = 0; i < stackData->numArgs; i++)
@@ -179,3 +181,4 @@ int ParseReturnArgument(int cType, int ea, int ed, double fs)
 	
 return(0);
 }
+#endif

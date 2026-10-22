@@ -122,6 +122,7 @@ int GetDataType(char* in)
 	int ret;
 	int tableIndex;
 	int len;
+    char* working;
 	CLU_LUNode* n;
 	
 	ret = 0;
@@ -130,23 +131,28 @@ int GetDataType(char* in)
 		return(CLU_UNKNOWN);
 	
 	len = strlen(in);
+    if (len == 0) return CLU_UNKNOWN;
+    working = CLU_String_Copy(in);
 
-	if(IsPointer(in))
+	if(IsPointer(working))
 	{
 		len -= 1;
-		in[len] = '\0';
+		working[len] = '\0';
 		ret |= CLU_POINTER_BIT;
 	}
 
-	n = (CLU_LUNode*)CLU_AVL_Access(baseTypeLU, in);
+	n = (CLU_LUNode*)CLU_AVL_Access(baseTypeLU, working);
 	
 	if(!n)
-		if( (tableIndex = GetTableIndex(in)) >= 0 )
+		if( (tableIndex = GetTableIndex(working)) >= 0 )
 		{
 			ret |= structs[tableIndex]->regNum;
 		}
 		else
-			return(CLU_UNKNOWN);
+        {
+            SAFE_FREE(working);
+            return CLU_UNKNOWN;
+        }
 	else
 		switch(CLU_C_BASE_TYPE(n->index))
 		{
@@ -166,6 +172,7 @@ int GetDataType(char* in)
 			}break;
 		}
 	
+SAFE_FREE(working);
 return(ret);
 }
 

@@ -939,7 +939,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			((LPCREATESTRUCT) lParam)->hInstance,
 			NULL);
 
-            g_wpOrigEditProc = (WNDPROC)(LONG64)SetWindowLong(g_InputEdit, GWL_WNDPROC,(LONG)(LONG64)EditSubclassProc ); 
+            g_wpOrigEditProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(g_InputEdit, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(EditSubclassProc)));
 
 			extern CInputBox g_InputBox;
 			g_InputBox.SetEditWindow(g_InputEdit);
@@ -1007,7 +1007,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			CS_Logout();
 			CS_Disconnect( DS_DISCONN );
 
-            SetWindowLong(g_InputEdit, GWL_WNDPROC, (LONG)(LONG64)g_wpOrigEditProc); 
+            SetWindowLongPtr(g_InputEdit, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(g_wpOrigEditProc));
 
 			PostQuitMessage(0);
 			if( g_pGameApp ) g_pGameApp->SetIsRun( false );
@@ -1129,7 +1129,7 @@ void StdoutRedirect()
    int hCrt;
    FILE *hf;
    //AllocConsole();
-   hCrt = _open_osfhandle((long)hOutputWrite, _O_TEXT);
+   hCrt = _open_osfhandle(reinterpret_cast<intptr_t>(hOutputWrite), _O_TEXT);
    hf = _fdopen( hCrt, "w" );
    *stdout = *hf;
    int i = setvbuf( stdout, NULL, _IONBF, 0 );

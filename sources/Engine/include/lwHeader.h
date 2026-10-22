@@ -1,5 +1,6 @@
 //
 #pragma once
+#include <stdint.h>
 
 #define LW_NAMESPACE            MindPower
 #define LW_BEGIN                namespace LW_NAMESPACE {
@@ -134,7 +135,7 @@ typedef lxi32 lxhandle;
 #define LW_LODWORD( i ) ( (LW_DWORD)( ((LW_INT64)i) & 0xffffffff ) )
 #define LW_HIDWORD( i ) ( (LW_DWORD)( (LW_DWORD)(((LW_INT64)i) >> 32) & 0xffffffff) )
 
-#define LW_ALIGN(adrs, bytes) (((UINT)adrs + ((bytes)-1)) & (~((bytes)-1)))
+#define LW_ALIGN(adrs, bytes) (((uintptr_t)(adrs) + ((uintptr_t)(bytes)-1)) & ~((uintptr_t)(bytes)-1))
 #define LW_ARRAY_LENGTH(buf) (sizeof(buf) / sizeof(buf[0]))
 
 #define LW_RET_OK           0

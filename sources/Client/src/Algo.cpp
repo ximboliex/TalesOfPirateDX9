@@ -3,145 +3,44 @@
 #include "Algo.h"
 #include "NetIF.h"
 
-#define INL inline
-#define NKD __declspec(naked)
+#include "ByteTransforms.h"
 
-int INL NKD big_apple()
-    {
-    __asm {
-        push ebp
-        mov ebp, esp 
-        sub esp, 20h 
-        and esp, 0FFFFFFF0h 
-        fld st(0) 
-        fst dword ptr [esp + 18h] 
-        fistp qword ptr [esp + 10h] 
-        fild qword ptr [esp + 10h] 
-        mov edx, dword ptr [esp + 18h] 
-        mov eax, dword ptr [esp + 10h] 
-        test eax, eax 
-        je L3
+// Lua bytecode decoding uses integer offsets, never integer addresses.
+static unsigned char* LuaByteAddress(lua_State* L)
+{
+    return static_cast<unsigned char*>(lua_touserdata(L, 1)) +
+        static_cast<ptrdiff_t>(lua_tonumber(L, 2));
+}
 
-L1:
-        fsubp st(1), st 
-        test edx, edx 
-        jns L2 
-        fstp dword ptr [esp] 
-        mov ecx, dword ptr [esp] 
-        xor ecx, 80000000h 
-        add ecx, 7FFFFFFFh 
-        adc eax, 0 
-        mov edx, dword ptr [esp + 14h] 
-        adc edx, 0 
-        jmp EXIT
-
-L2:
-        fstp dword ptr [esp] 
-        mov ecx, dword ptr [esp] 
-        add ecx, 7FFFFFFFh 
-        sbb eax, 0 
-        mov edx, dword ptr [esp + 14h] 
-        sbb edx, 0 
-        jmp EXIT
-
-L3:
-        mov edx, dword ptr [esp + 14h] 
-        test edx, 7FFFFFFFh 
-        jne L1 
-        fstp dword ptr [esp + 18h] 
-        fstp dword ptr [esp + 18h] 
-
-EXIT:
-        leave
-        ret}}
-
-#pragma warning(disable : 4800)
 int lua_fox_boff(lua_State* L)
-    {
-    if ((lua_gettop(L) == 3) && lua_isuserdata(L, 1)
-        && lua_isnumber(L, 2) && lua_isnumber(L, 3))
-        {
-        __asm {
-            push 1
-            push L
-            call lua_touserdata
-            add esp, 8
-            mov ebx, eax
-            push 2
-            push L
-            call lua_tonumber
-            add esp, 8
-            call big_apple 
-            mov esi, eax
-            push 3
-            push L
-            call lua_tonumber
-            add esp, 8
-            call big_apple
-            mov cl, al
-            mov al, byte ptr [ebx + esi]
-            xor al, cl
-            mov byte ptr [ebx + esi], al
-            }}
-    return 0;}
+{
+    if (lua_gettop(L) == 3 && lua_isuserdata(L, 1) &&
+        lua_isnumber(L, 2) && lua_isnumber(L, 3))
+        *LuaByteAddress(L) ^= static_cast<unsigned char>(static_cast<int>(lua_tonumber(L, 3)));
+    return 0;
+}
 
 int lua_dog_blog(lua_State* L)
+{
+    if (lua_gettop(L) == 3 && lua_isuserdata(L, 1) &&
+        lua_isnumber(L, 2) && lua_isnumber(L, 3))
     {
-    if ((lua_gettop(L) == 3) && lua_isuserdata(L, 1)
-        && lua_isnumber(L, 2) && lua_isnumber(L, 3))
-        {
-        __asm {
-            push 1
-            push L
-            call lua_touserdata
-            add esp, 8
-            mov ebx, eax
-            push 2
-            push L
-            call lua_tonumber
-            add esp, 8
-            call big_apple 
-            mov esi, eax
-            push 3
-            push L
-            call lua_tonumber
-            add esp, 8
-            call big_apple
-            mov cl, al
-            mov al, byte ptr [ebx + esi]
-            rol al, cl
-            mov byte ptr [ebx + esi], al
-            }}
-    return 0;}
+        const unsigned char bits = static_cast<unsigned char>(static_cast<int>(lua_tonumber(L, 3))) & 7;
+        ByteTransforms::RotateLeft(LuaByteAddress(L), 0, bits);
+    }
+    return 0;
+}
 
 int lua_dog_brog(lua_State* L)
+{
+    if (lua_gettop(L) == 3 && lua_isuserdata(L, 1) &&
+        lua_isnumber(L, 2) && lua_isnumber(L, 3))
     {
-    if ((lua_gettop(L) == 3) && lua_isuserdata(L, 1)
-        && lua_isnumber(L, 2) && lua_isnumber(L, 3))
-        {
-        __asm {
-            push 1
-            push L
-            call lua_touserdata
-            add esp, 8
-            mov ebx, eax
-            push 2
-            push L
-            call lua_tonumber
-            add esp, 8
-            call big_apple 
-            mov esi, eax
-            push 3
-            push L
-            call lua_tonumber
-            add esp, 8
-            call big_apple
-            mov cl, al
-            mov al, byte ptr [ebx + esi]
-            ror al, cl
-            mov byte ptr [ebx + esi], al
-            }}
-    return 0;}
+        const unsigned char bits = static_cast<unsigned char>(static_cast<int>(lua_tonumber(L, 3))) & 7;
+        ByteTransforms::RotateRight(LuaByteAddress(L), 0, bits);
+    }
+    return 0;
+}
 
 int lua_cat_fish(lua_State* L)
     {

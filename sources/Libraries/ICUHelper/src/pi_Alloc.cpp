@@ -2,6 +2,9 @@
 
 #include <iostream>
 #include <fstream>
+#include <limits>
+#include <new>
+#include <cstring>
 
 using namespace std;
 
@@ -25,7 +28,7 @@ int pi_Alloc::numBlocks()
 	return s_numBlocks;
 }
 
-int pi_Alloc::numBytes()
+size_t pi_Alloc::numBytes()
 {
 	return s_numBytes;
 }
@@ -35,7 +38,7 @@ union Align
 	struct
 	{
 		int d_magic;
-		int d_bytes;
+		size_t d_bytes;
 	} d_data;
 	long int d_longInt;
 	long double d_longDouble;
@@ -54,9 +57,10 @@ void* pi_Alloc::allocate(size_t size, pi_Alloc *, const char* fileName, int line
 void* pi_Alloc::allocate(size_t size, pi_Alloc *)
 #endif
 {
+	if(size > (std::numeric_limits<size_t>::max)() - sizeof(Align)) throw std::bad_alloc();
 	Align* align = (Align*) new char[sizeof(Align) + size];
 	align->d_data.d_magic = ALLOCAED_MEMORY;
-	align->d_data.d_bytes = (int)size;
+	align->d_data.d_bytes = size;
 
 	void *addr = ++align;
 	oneMoreBlock(size);
@@ -99,7 +103,7 @@ void pi_Alloc::deallocate(void* addr)
 	}
 
 	Align* align = (Align*)addr;
-	int size = align[-1].d_data.d_bytes;
+	size_t size = align[-1].d_data.d_bytes;
 	oneLessBlock(size);
 	align[-1].d_data.d_magic = DEALLOCATED_MEMORY;
 
@@ -127,7 +131,7 @@ pi_LeakReporter::pi_LeakReporter(const char* fileName)
 pi_LeakReporter::~pi_LeakReporter(void)
 {
 	int b = pi_Alloc::numBlocks();
-	int y = pi_Alloc::numBytes();
+	size_t y = pi_Alloc::numBytes();
 
 	if(b>0 || y>0)
 	{
@@ -142,7 +146,7 @@ pi_LeakReporter::~pi_LeakReporter(void)
 void pi_LeakReporter::addItem(void* addr, const char* fileName, int lineNo, size_t size)
 {
 	pi_LeakItem item;
-	item.addr = (int)addr;
+	item.addr = addr;
 
 	// CRT 7.1 
 #if (_MSC_VER > 1400) 
@@ -160,7 +164,7 @@ void pi_LeakReporter::removeItem(void* addr)
 {
 	for(pi_LeakList::iterator it = pi_leakList.begin(); it!=pi_leakList.end();it++)
 	{
-		if(it->addr == (int)addr)
+		if(it->addr == addr)
 		{
 			pi_leakList.erase(it);
 			break;

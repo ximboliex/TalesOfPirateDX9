@@ -11,6 +11,7 @@
 class   MPRender;
 
 #include "D3dx9effect.h"
+#include "lwEffectPassState.h"
 #include "i_effect.h"
 
 class CMPEffectFile  
@@ -65,9 +66,10 @@ public:
 #endif
 
 	LPD3DXEFFECT         m_pEffect;
-	UINT                 m_passes;
+	UINT                 m_passes = 0;
 
 protected:
+    lwEffectPassState _passState;
 	int									_iTechNum;
 	std::vector<D3DXHANDLE>		_vecTechniques;
 
@@ -75,11 +77,8 @@ protected:
 };
 inline BOOL CMPEffectFile::SetTechnique(int iIdx)
 {
-	//if(iIdx >= _iTechNum)
-	//	return false;
-    if(FAILED(m_pEffect->SetTechnique(_vecTechniques[iIdx])))
-		return FALSE;
-	return  TRUE;
+    if(!m_pEffect || iIdx < 0 || static_cast<size_t>(iIdx) >= _vecTechniques.size()) return FALSE;
+    return SUCCEEDED(m_pEffect->SetTechnique(_vecTechniques[iIdx]));
 }
 
 //inline  BOOL CMPEffectFile::CreateVertexShader()
@@ -115,46 +114,26 @@ inline BOOL CMPEffectFile::SetTechnique(int iIdx)
 //	m_pDev->SetVertexShader(_dwVShader);
 //	return  TRUE;
 //}
-inline BOOL CMPEffectFile::SetTexture(LPCSTR TextureValue, IDirect3DTextureX* pTexture)
+inline BOOL CMPEffectFile::SetTexture(LPCSTR name, IDirect3DTextureX* texture)
 {
-    if(FAILED(m_pEffect->SetTexture(TextureValue,pTexture)))
-		return FALSE;
-	return TRUE;
+    return m_pEffect && SUCCEEDED(m_pEffect->SetTexture(name, texture));
 }
-inline BOOL CMPEffectFile::SetDword(LPCSTR DwName, DWORD dwvalue)
+inline BOOL CMPEffectFile::SetDword(LPCSTR name, DWORD value)
 {
-#if defined(LW_USE_DX8)
-    if(FAILED(m_pEffect->SetDword(DwName,dwvalue)))
-		return FALSE;
-#endif
-	return TRUE;
+    // D3DX9 removed SetDword; preserve its four-byte parameter representation.
+    return m_pEffect && SUCCEEDED(m_pEffect->SetValue(name, &value, sizeof(value)));
 }
-
-inline BOOL CMPEffectFile::Begin(DWORD dwIsSave)
+inline BOOL CMPEffectFile::Begin(DWORD flags)
 {
-    if(FAILED(m_pEffect->Begin(&m_passes,dwIsSave)))
-		return FALSE;
-	return TRUE;
+    return _passState.Begin(m_pEffect, flags, m_passes);
 }
-
-inline BOOL CMPEffectFile::Pass(UINT ipass = 0)
+inline BOOL CMPEffectFile::Pass(UINT index = 0)
 {
-#if (defined LW_USE_DX9)
-	if (FAILED(m_pEffect->BeginPass(ipass)) || FAILED(m_pEffect->CommitChanges()))
-#elif (defined LW_USE_DX8)
-	if (FAILED(m_pEffect->Pass(ipass)))
-#endif
-		return FALSE;
-	return TRUE;
+    return _passState.Pass(m_pEffect, index, m_passes);
 }
 inline BOOL CMPEffectFile::End()
 {
-	//m_pEffect->Pass(1);
-
-    if(FAILED(m_pEffect->EndPass()) || FAILED(m_pEffect->End()))
-		return FALSE;
-
-	return TRUE;
+    return _passState.End(m_pEffect);
 }
 
 #endif // !defined(AFX_DXEFFECTFILE_H__F7B73B81_55EE_11BD_AC67_0008C720ECD1__INCLUDED_)

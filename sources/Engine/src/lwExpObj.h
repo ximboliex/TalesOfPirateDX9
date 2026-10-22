@@ -2,6 +2,7 @@
 #pragma once
 
 #include "lwHeader.h"
+#include "lwTextureDisk.h"
 #include "lwStdInc.h"
 #include "lwMath.h"
 #include "lwDirectX.h"
@@ -73,7 +74,7 @@ struct lwTexInfo_0001
     DWORD colorkey_type;
     lwColorValue4b colorkey;
     char file_name[LW_MAX_NAME];
-    void* data;
+    DWORD obsolete_data_pointer; // Serialized Win32 address; never dereference.
 
     lwTextureStageStateSetTex2 tss_set;
 };
@@ -433,6 +434,7 @@ LW_STD_DECLARATION()
     LW_RESULT Save(FILE* fp) const;
 
     LW_RESULT Copy(const lwHelperInfo* src);
+    void Swap(lwHelperInfo& other);
     DWORD GetDataSize() const;
 };
 
@@ -933,6 +935,8 @@ LW_STD_DECLARATION()
 };
 
 typedef lwGeomObjInfo::lwGeomObjInfoHeader lwGeomObjInfoHeader;
+static_assert(sizeof(lwGeomObjInfoHeader) == 116, "LGO/LMO geometry header ABI changed");
+static_assert(sizeof(DWORD) == 4, "Asset DWORD fields must remain 32-bit");
 
 struct lwModelObjInfo : public lwIModelObjInfo
 {

@@ -1,0 +1,49 @@
+name: Client x64 ABI regressions
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'sources/Build/**'
+      - 'sources/ClientDX9.sln'
+      - 'sources/Client/proj/**'
+      - 'sources/Engine/**'
+      - 'sources/Libraries/**'
+      - '.github/workflows/client-x64-regressions.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install libffi headers
+        run: sudo apt-get update && sudo apt-get install -y libffi-dev
+      - name: Check projects and binary readers
+        run: |
+          python3 sources/Build/check_client_x64.py --projects-only
+          python3 -m unittest discover -s sources/Build/tests -p 'test_*.py'
+      - name: Exercise Windows calling convention and file ABI
+        run: |
+          FFI_INCLUDE=$(dirname "$(dpkg -L libffi-dev | rg '/ffi.h$' | head -1)")
+          FFI_LIBRARY=$(dpkg -L libffi-dev | rg '/libffi.so$' | head -1)
+          python3 sources/Build/run_portability_tests.py --ffi-include "$FFI_INCLUDE" --ffi-library "$FFI_LIBRARY"
+
+  msvc:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build pinned libffi for AMD64
+        shell: pwsh
+        run: ./sources/Build/Prepare-LibffiX64.ps1
+      - name: Run native MSVC Debug and Release ABI tests
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          if errorlevel 1 exit /b 1
+          powershell -NoProfile -ExecutionPolicy Bypass -File sources\Build\Test-ClientX64.ps1 -Configuration Release
+          if errorlevel 1 exit /b 1
+          powershell -NoProfile -ExecutionPolicy Bypass -File sources\Build\Test-ClientX64.ps1 -Configuration Debug
+          if errorlevel 1 exit /b 1

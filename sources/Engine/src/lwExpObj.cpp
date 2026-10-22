@@ -2,6 +2,9 @@
 
 #include "stdafx.h"
 #include "lwExpObj.h"
+#include "lwBinaryIO.h"
+#include "lwMeshFormat.h"
+#include <utility>
 #include "lwErrorCode.h"
 #include "lwTreeNode.h"
 #include "lwAnimKeySetPRS.h"
@@ -33,35 +36,63 @@ LW_RESULT lwMtlTexInfo::Save(FILE* fp) const
 }
 */
 
+// The first 108 bytes are fixed-width metadata. Native x64 padding before
+// data and the pointer itself are deliberately excluded from file I/O.
+static_assert(offsetof(lwTexInfo, file_name) == 44, "Texture metadata ABI changed");
+static_assert(sizeof(((lwTexInfo*)0)->file_name) == 64, "Texture filename ABI changed");
+static_assert(sizeof(((lwTexInfo*)0)->tss_set) == sizeof(((lwTextureDisk32*)0)->tss_set), "Texture states ABI changed");
+static_assert(sizeof(lwTexInfo_0001) == 240, "Legacy v1 texture ABI changed");
+
+static bool lwLoadTextureRecords(lwTexInfo* textures, DWORD count, FILE* fp)
+{
+    for(DWORD i = 0; i < count; ++i)
+    {
+        lwTextureDisk32 disk;
+        if(fread(&disk, sizeof(disk), 1, fp) != 1) return false;
+        lwTextureFromDisk(textures[i], disk);
+    }
+    return true;
+}
+
+static bool lwSaveTextureRecords(const lwTexInfo* textures, DWORD count, FILE* fp)
+{
+    for(DWORD i = 0; i < count; ++i)
+    {
+        lwTextureDisk32 disk = lwTextureToDisk(textures[i]);
+        if(fwrite(&disk, sizeof(disk), 1, fp) != 1) return false;
+    }
+    return true;
+}
+
 // lwMtlTexInfo io method
 LW_RESULT lwMtlTexInfo_Load(lwMtlTexInfo* info, FILE* fp, DWORD version)
 {
     if(version >= EXP_OBJ_VERSION_1_0_0_0)
     {
-        fread(&info->opacity, sizeof(info->opacity), 1, fp);
-        fread(&info->transp_type, sizeof(info->transp_type), 1, fp);
-        fread(&info->mtl, sizeof(lwMaterial), 1, fp);
-        fread(&info->rs_set[0], sizeof(info->rs_set), 1, fp);
-        fread(&info->tex_seq[0], sizeof(info->tex_seq), 1, fp);
+        if(fread(&info->opacity, sizeof(info->opacity), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->transp_type, sizeof(info->transp_type), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->mtl, sizeof(lwMaterial), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->rs_set[0], sizeof(info->rs_set), 1, fp) != 1) return LW_RET_FAILED;
+        if(!lwLoadTextureRecords(info->tex_seq, LW_MAX_TEXTURESTAGE_NUM, fp)) return LW_RET_FAILED;
     }
     else if(version == MTLTEX_VERSION0002)
     {
-        fread(&info->opacity, sizeof(info->opacity), 1, fp);
-        fread(&info->transp_type, sizeof(info->transp_type), 1, fp);
-        fread(&info->mtl, sizeof(lwMaterial), 1, fp);
-        fread(&info->rs_set[0], sizeof(info->rs_set), 1, fp);
-        fread(&info->tex_seq[0], sizeof(info->tex_seq), 1, fp);
+        if(fread(&info->opacity, sizeof(info->opacity), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->transp_type, sizeof(info->transp_type), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->mtl, sizeof(lwMaterial), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->rs_set[0], sizeof(info->rs_set), 1, fp) != 1) return LW_RET_FAILED;
+        if(!lwLoadTextureRecords(info->tex_seq, LW_MAX_TEXTURESTAGE_NUM, fp)) return LW_RET_FAILED;
     }
     else if(version == MTLTEX_VERSION0001)
     {
         lwRenderStateSetMtl2 rsm;
         lwTexInfo_0001 tex_info[LW_MAX_TEXTURESTAGE_NUM];
 
-        fread(&info->opacity, sizeof(info->opacity), 1, fp);
-        fread(&info->transp_type, sizeof(info->transp_type), 1, fp);
-        fread(&info->mtl, sizeof(lwMaterial), 1, fp);
-        fread(&rsm, sizeof(rsm), 1, fp);
-        fread(&tex_info[0], sizeof(tex_info), 1, fp);
+        if(fread(&info->opacity, sizeof(info->opacity), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->transp_type, sizeof(info->transp_type), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->mtl, sizeof(lwMaterial), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&rsm, sizeof(rsm), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&tex_info[0], sizeof(tex_info), 1, fp) != 1) return LW_RET_FAILED;
 
         lwRenderStateValue* rsv;
         for(DWORD i = 0; i < rsm.SEQUENCE_SIZE; i++)
@@ -131,10 +162,10 @@ LW_RESULT lwMtlTexInfo_Load(lwMtlTexInfo* info, FILE* fp, DWORD version)
     {
         lwRenderStateSetMtl2 rsm;
 
-        fread(&info->mtl, sizeof(lwMaterial), 1, fp);
-        fread(&rsm, sizeof(lwRenderStateSetMtl2), 1, fp);
+        if(fread(&info->mtl, sizeof(lwMaterial), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&rsm, sizeof(lwRenderStateSetMtl2), 1, fp) != 1) return LW_RET_FAILED;
         lwTexInfo_0000 tex_info[LW_MAX_TEXTURESTAGE_NUM];
-        fread(&tex_info[0], sizeof(tex_info), 1, fp);
+        if(fread(&tex_info[0], sizeof(tex_info), 1, fp) != 1) return LW_RET_FAILED;
 
         lwRenderStateValue* rsv;
         for(DWORD i = 0; i < rsm.SEQUENCE_SIZE; i++)
@@ -259,11 +290,11 @@ LW_RESULT lwMtlTexInfo_Load(lwMtlTexInfo* info, FILE* fp, DWORD version)
 
 LW_RESULT lwMtlTexInfo_Save(lwMtlTexInfo* info, FILE* fp, DWORD version)
 { 
-    fwrite(&info->opacity, sizeof(info->opacity), 1, fp);
-    fwrite(&info->transp_type, sizeof(info->transp_type), 1, fp);
-    fwrite(&info->mtl, sizeof(lwMaterial), 1, fp);
-    fwrite(&info->rs_set[0], sizeof(info->rs_set), 1, fp);
-    fwrite(&info->tex_seq[0], sizeof(info->tex_seq), 1, fp);
+    if(fwrite(&info->opacity, sizeof(info->opacity), 1, fp) != 1) return LW_RET_FAILED;
+    if(fwrite(&info->transp_type, sizeof(info->transp_type), 1, fp) != 1) return LW_RET_FAILED;
+    if(fwrite(&info->mtl, sizeof(lwMaterial), 1, fp) != 1) return LW_RET_FAILED;
+    if(fwrite(&info->rs_set[0], sizeof(info->rs_set), 1, fp) != 1) return LW_RET_FAILED;
+    if(!lwSaveTextureRecords(info->tex_seq, LW_MAX_TEXTURESTAGE_NUM, fp)) return LW_RET_FAILED;
 
     return LW_RET_OK;
 }
@@ -276,16 +307,30 @@ LW_RESULT lwLoadMtlTexInfo(lwMtlTexInfo** out_buf, DWORD* out_num, FILE* fp, DWO
     if(version == EXP_OBJ_VERSION_0_0_0_0)
     {
         DWORD old_version;
-        fread(&old_version, sizeof(old_version), 1, fp);
+        if(fread(&old_version, sizeof(old_version), 1, fp) != 1) return LW_RET_FAILED;
         version = old_version;
     }
 
-    fread(&num, sizeof(num), 1, fp);
+    if(fread(&num, sizeof(num), 1, fp) != 1) return LW_RET_FAILED;
+    size_t record_size;
+    if(version >= EXP_OBJ_VERSION_1_0_0_0 || version == MTLTEX_VERSION0002)
+        record_size = sizeof(float) + sizeof(DWORD) + sizeof(lwMaterial) + sizeof(buf[0].rs_set) + sizeof(lwTextureDisk32) * LW_MAX_TEXTURESTAGE_NUM;
+    else if(version == MTLTEX_VERSION0001)
+        record_size = sizeof(float) + sizeof(DWORD) + sizeof(lwMaterial) + sizeof(lwRenderStateSetMtl2) + sizeof(lwTexInfo_0001) * LW_MAX_TEXTURESTAGE_NUM;
+    else if(version == MTLTEX_VERSION0000)
+        record_size = sizeof(lwMaterial) + sizeof(lwRenderStateSetMtl2) + sizeof(lwTexInfo_0000) * LW_MAX_TEXTURESTAGE_NUM;
+    else return LW_RET_FAILED;
+    const int64_t remaining = lwFileRemaining(fp);
+    if(remaining < 0 || num > static_cast<uint64_t>(remaining) / record_size) return LW_RET_FAILED;
     buf = LW_NEW(lwMtlTexInfo[num]);
 
     for(DWORD i = 0; i < num; i++)
     {
-        lwMtlTexInfo_Load(&buf[i], fp, version);
+        if(LW_FAILED(lwMtlTexInfo_Load(&buf[i], fp, version)))
+        {
+            LW_SAFE_DELETE_A(buf);
+            return LW_RET_FAILED;
+        }
     }
 
     *out_buf = buf;
@@ -297,11 +342,12 @@ LW_RESULT lwSaveMtlTexInfo(FILE* fp, const lwMtlTexInfo* info, DWORD num)
 {
     //fwrite(&MTLTEX_VERSION, sizeof(MTLTEX_VERSION), 1, fp);
 
-    fwrite(&num, sizeof(DWORD), 1, fp);
+    if(fwrite(&num, sizeof(DWORD), 1, fp) != 1) return LW_RET_FAILED;
     
     for(DWORD i = 0; i < num; i++)
     {
-        lwMtlTexInfo_Save((lwMtlTexInfo*)&info[i], fp, MTLTEX_VERSION);
+        if(LW_FAILED(lwMtlTexInfo_Save((lwMtlTexInfo*)&info[i], fp, MTLTEX_VERSION)))
+            return LW_RET_FAILED;
     }
 
     return LW_RET_OK;
@@ -310,7 +356,7 @@ DWORD lwMtlTexInfo_GetDataSize(lwMtlTexInfo* info)
 { 
     return sizeof(info->opacity) + sizeof(info->transp_type) 
         + sizeof(info->mtl) + sizeof(info->rs_set)
-        + sizeof(info->tex_seq); 
+        + sizeof(lwTextureDisk32) * LW_MAX_TEXTURESTAGE_NUM;
 }
 
 
@@ -458,7 +504,7 @@ LW_RESULT lwAnimDataTexImg::Load(FILE* fp, DWORD version)
     {
         fread(&_data_num, sizeof(_data_num), 1, fp);
         _data_seq = LW_NEW(lwTexInfo[_data_num]);
-        fread(_data_seq, sizeof(lwTexInfo), _data_num, fp);
+        if(!lwLoadTextureRecords(_data_seq, _data_num, fp)) return LW_RET_FAILED;
     }
 
     return LW_RET_OK;
@@ -466,7 +512,7 @@ LW_RESULT lwAnimDataTexImg::Load(FILE* fp, DWORD version)
 LW_RESULT lwAnimDataTexImg::Save(FILE* fp) const
 {
     fwrite(&_data_num, sizeof(_data_num), 1, fp);
-    fwrite(_data_seq, sizeof(lwTexInfo), _data_num, fp);
+    if(!lwSaveTextureRecords(_data_seq, _data_num, fp)) return LW_RET_FAILED;
     return LW_RET_OK;
 }
 LW_RESULT lwAnimDataTexImg::Load(const char* file)
@@ -483,7 +529,7 @@ DWORD lwAnimDataTexImg::GetDataSize() const
 {
     DWORD size = 0;
     
-    size += sizeof(lwTexInfo) * _data_num;
+    size += sizeof(lwTextureDisk32) * _data_num;
     
     if(size > 0)
     {
@@ -1338,7 +1384,7 @@ LW_RESULT lwMeshInfo_Copy(lwMeshInfo* dst, const lwMeshInfo* src)
         memcpy(dst->normal_seq, src->normal_seq, sizeof(lwVector3) * dst->vertex_num);
     }
 
-    if(dst->fvf & D3DFVF_TEX1)
+    if(lwTextureCoordinateCount(dst->fvf) == 1)
     {
         dst->texcoord0_seq = LW_NEW(lwVector2[dst->vertex_num]);
         memcpy(dst->texcoord0_seq, src->texcoord0_seq, sizeof(lwVector2) * dst->vertex_num);
@@ -1349,14 +1395,14 @@ LW_RESULT lwMeshInfo_Copy(lwMeshInfo* dst, const lwMeshInfo* src)
 		//dst->fvf |= D3DFVF_TEX2;
 		//dst->fvf ^= D3DFVF_TEX1;
     }
-    else if(dst->fvf & D3DFVF_TEX2)
+    else if(lwTextureCoordinateCount(dst->fvf) == 2)
     {
         dst->texcoord0_seq = LW_NEW(lwVector2[dst->vertex_num]);
         dst->texcoord1_seq = LW_NEW(lwVector2[dst->vertex_num]);
         memcpy(dst->texcoord0_seq, src->texcoord0_seq, sizeof(lwVector2) * dst->vertex_num);
         memcpy(dst->texcoord1_seq, src->texcoord1_seq, sizeof(lwVector2) * dst->vertex_num);
     }
-    else if(dst->fvf & D3DFVF_TEX3)
+    else if(lwTextureCoordinateCount(dst->fvf) == 3)
     {
         dst->texcoord0_seq = LW_NEW(lwVector2[dst->vertex_num]);
         dst->texcoord1_seq = LW_NEW(lwVector2[dst->vertex_num]);
@@ -1365,7 +1411,7 @@ LW_RESULT lwMeshInfo_Copy(lwMeshInfo* dst, const lwMeshInfo* src)
         memcpy(dst->texcoord1_seq, src->texcoord1_seq, sizeof(lwVector2) * dst->vertex_num);
         memcpy(dst->texcoord2_seq, src->texcoord2_seq, sizeof(lwVector2) * dst->vertex_num);
     }
-    else if(dst->fvf & D3DFVF_TEX4)
+    else if(lwTextureCoordinateCount(dst->fvf) == 4)
     {
         dst->texcoord0_seq = LW_NEW(lwVector2[dst->vertex_num]);
         dst->texcoord1_seq = LW_NEW(lwVector2[dst->vertex_num]);
@@ -1411,19 +1457,19 @@ LW_RESULT lwMeshInfo_Load(lwMeshInfo* info, FILE* fp, DWORD version)
     if(version == EXP_OBJ_VERSION_0_0_0_0)
     {
         DWORD old_version;
-        fread(&old_version, sizeof(old_version), 1, fp);
+        if(fread(&old_version, sizeof(old_version), 1, fp) != 1) return LW_RET_FAILED;
         version = old_version;
     }
 
     // header
     if(version >= EXP_OBJ_VERSION_1_0_0_4)
     {
-        fread(&info->header, sizeof(info->header), 1, fp);
+        if(fread(&info->header, sizeof(info->header), 1, fp) != 1) return LW_RET_FAILED;
     }
     else if(version >= EXP_OBJ_VERSION_1_0_0_3)
     {
         lwMeshInfo_0003::lwMeshInfoHeader header;
-        fread(&header, sizeof(header), 1, fp);
+        if(fread(&header, sizeof(header), 1, fp) != 1) return LW_RET_FAILED;
         info->fvf = header.fvf;
         info->pt_type = header.pt_type;
         info->vertex_num = header.vertex_num;
@@ -1436,7 +1482,7 @@ LW_RESULT lwMeshInfo_Load(lwMeshInfo* info, FILE* fp, DWORD version)
     else if((version >= EXP_OBJ_VERSION_1_0_0_0) || (version == MESH_VERSION0001))
     {
         lwMeshInfo_0003::lwMeshInfoHeader header;
-        fread(&header, sizeof(header), 1, fp);
+        if(fread(&header, sizeof(header), 1, fp) != 1) return LW_RET_FAILED;
         info->fvf = header.fvf;
         info->pt_type = header.pt_type;
         info->vertex_num = header.vertex_num;
@@ -1449,7 +1495,7 @@ LW_RESULT lwMeshInfo_Load(lwMeshInfo* info, FILE* fp, DWORD version)
     else if(version == MESH_VERSION0000)
     {
         lwMeshInfo_0000::lwMeshInfoHeader header;
-        fread(&header, sizeof(header), 1, fp);
+        if(fread(&header, sizeof(header), 1, fp) != 1) return LW_RET_FAILED;
         info->header.fvf = header.fvf;
         info->header.pt_type = header.pt_type;
         info->header.vertex_num = header.vertex_num;
@@ -1482,33 +1528,32 @@ LW_RESULT lwMeshInfo_Load(lwMeshInfo* info, FILE* fp, DWORD version)
     else
     {
         MessageBox(NULL, "invalid version", "error", MB_OK);
+        return LW_RET_FAILED;
     }
 
+
+    if(lwTextureCoordinateCount(info->fvf) > LW_MAX_TEXTURESTAGE_NUM) return LW_RET_FAILED;
 
     if(version >= EXP_OBJ_VERSION_1_0_0_4)
     {    
         if(info->vertex_element_num > 0)
         {
-            info->vertex_element_seq = LW_NEW(D3DVERTEXELEMENTX[info->vertex_element_num]);
-            fread(&info->vertex_element_seq[0], sizeof(D3DVERTEXELEMENTX), info->vertex_element_num, fp);
+            if(!lwReadArray(fp, info->vertex_element_seq, info->vertex_element_num)) return LW_RET_FAILED;
         }
 
         if(info->vertex_num > 0)
         {
-            info->vertex_seq = LW_NEW(lwVector3[info->vertex_num]);
-            fread(&info->vertex_seq[0], sizeof(lwVector3), info->vertex_num, fp);
+            if(!lwReadArray(fp, info->vertex_seq, info->vertex_num)) return LW_RET_FAILED;
         }
 
         if(info->fvf & D3DFVF_NORMAL)
         {
-            info->normal_seq = LW_NEW(lwVector3[info->vertex_num]);
-            fread(&info->normal_seq[0], sizeof(lwVector3), info->vertex_num, fp);
+            if(!lwReadArray(fp, info->normal_seq, info->vertex_num)) return LW_RET_FAILED;
         }
 
-        if(info->fvf & D3DFVF_TEX1)
+        if(lwTextureCoordinateCount(info->fvf) == 1)
         {
-            info->texcoord0_seq = LW_NEW(lwVector2[info->vertex_num]);
-            fread(&info->texcoord0_seq[0], sizeof(lwVector2), info->vertex_num, fp);
+            if(!lwReadArray(fp, info->texcoord0_seq, info->vertex_num)) return LW_RET_FAILED;
 
 			//// added by clp
 			//info->texcoord1_seq = LW_NEW(lwVector2[info->vertex_num]);
@@ -1516,78 +1561,71 @@ LW_RESULT lwMeshInfo_Load(lwMeshInfo* info, FILE* fp, DWORD version)
 			//info->fvf |= D3DFVF_TEX2;
 			//info->fvf ^= D3DFVF_TEX1;
 		}
-		else if(info->fvf & D3DFVF_TEX2)
+		else if(lwTextureCoordinateCount(info->fvf) == 2)
         {
-            info->texcoord0_seq = LW_NEW(lwVector2[info->vertex_num]);
-            info->texcoord1_seq = LW_NEW(lwVector2[info->vertex_num]);
-            fread(&info->texcoord0_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-            fread(&info->texcoord1_seq[0], sizeof(lwVector2), info->vertex_num, fp);
+
+
+            if(!lwReadArray(fp, info->texcoord0_seq, info->vertex_num)) return LW_RET_FAILED;
+            if(!lwReadArray(fp, info->texcoord1_seq, info->vertex_num)) return LW_RET_FAILED;
         }
-        else if(info->fvf & D3DFVF_TEX3)
+        else if(lwTextureCoordinateCount(info->fvf) == 3)
         {
-            info->texcoord0_seq = LW_NEW(lwVector2[info->vertex_num]);
-            info->texcoord1_seq = LW_NEW(lwVector2[info->vertex_num]);
-            info->texcoord2_seq = LW_NEW(lwVector2[info->vertex_num]);
-            fread(&info->texcoord0_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-            fread(&info->texcoord1_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-            fread(&info->texcoord2_seq[0], sizeof(lwVector2), info->vertex_num, fp);
+
+
+
+            if(!lwReadArray(fp, info->texcoord0_seq, info->vertex_num)) return LW_RET_FAILED;
+            if(!lwReadArray(fp, info->texcoord1_seq, info->vertex_num)) return LW_RET_FAILED;
+            if(!lwReadArray(fp, info->texcoord2_seq, info->vertex_num)) return LW_RET_FAILED;
         }
-        else if(info->fvf & D3DFVF_TEX4)
+        else if(lwTextureCoordinateCount(info->fvf) == 4)
         {
-            info->texcoord0_seq = LW_NEW(lwVector2[info->vertex_num]);
-            info->texcoord1_seq = LW_NEW(lwVector2[info->vertex_num]);
-            info->texcoord2_seq = LW_NEW(lwVector2[info->vertex_num]);
-            info->texcoord3_seq = LW_NEW(lwVector2[info->vertex_num]);
-            fread(&info->texcoord0_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-            fread(&info->texcoord1_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-            fread(&info->texcoord2_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-            fread(&info->texcoord3_seq[0], sizeof(lwVector2), info->vertex_num, fp);
+
+
+
+
+            if(!lwReadArray(fp, info->texcoord0_seq, info->vertex_num)) return LW_RET_FAILED;
+            if(!lwReadArray(fp, info->texcoord1_seq, info->vertex_num)) return LW_RET_FAILED;
+            if(!lwReadArray(fp, info->texcoord2_seq, info->vertex_num)) return LW_RET_FAILED;
+            if(!lwReadArray(fp, info->texcoord3_seq, info->vertex_num)) return LW_RET_FAILED;
         }
 
         if(info->fvf & D3DFVF_DIFFUSE)
         {
-            info->vercol_seq = LW_NEW(DWORD[info->vertex_num]);
-            fread(&info->vercol_seq[0], sizeof(DWORD), info->vertex_num, fp);
+            if(!lwReadArray(fp, info->vercol_seq, info->vertex_num)) return LW_RET_FAILED;
         }
 
         if(info->bone_index_num > 0)
         {
-            info->blend_seq = LW_NEW(lwBlendInfo[info->vertex_num]);
-            info->bone_index_seq = LW_NEW(DWORD[info->bone_index_num]);
-            fread(&info->blend_seq[0], sizeof(lwBlendInfo), info->vertex_num, fp);
-            fread(&info->bone_index_seq[0], sizeof(DWORD), info->bone_index_num, fp);
+
+
+            if(!lwReadArray(fp, info->blend_seq, info->vertex_num)) return LW_RET_FAILED;
+            if(!lwReadArray(fp, info->bone_index_seq, info->bone_index_num)) return LW_RET_FAILED;
         }
 
         if(info->index_num > 0)
         {
-            info->index_seq = LW_NEW(DWORD[info->index_num]);
-            fread(&info->index_seq[0], sizeof(DWORD), info->index_num, fp);
+            if(!lwReadArray(fp, info->index_seq, info->index_num)) return LW_RET_FAILED;
         }
 
         if(info->subset_num > 0)
         {
-            info->subset_seq = LW_NEW(lwSubsetInfo[info->subset_num]);
-            fread(&info->subset_seq[0], sizeof(lwSubsetInfo), info->subset_num, fp);
+            if(!lwReadArray(fp, info->subset_seq, info->subset_num)) return LW_RET_FAILED;
         }
     }
     else
     {
-        info->subset_seq = LW_NEW(lwSubsetInfo[info->subset_num]);
-        fread(&info->subset_seq[0], sizeof(lwSubsetInfo), info->subset_num, fp);
+        if(!lwReadArray(fp, info->subset_seq, info->subset_num)) return LW_RET_FAILED;
 
-        info->vertex_seq = LW_NEW(lwVector3[info->vertex_num]);
-        fread(&info->vertex_seq[0], sizeof(lwVector3), info->vertex_num, fp);
+        if(!lwReadArray(fp, info->vertex_seq, info->vertex_num)) return LW_RET_FAILED;
 
         if(info->fvf & D3DFVF_NORMAL)
         {
-            info->normal_seq = LW_NEW(lwVector3[info->vertex_num]);
-            fread(&info->normal_seq[0], sizeof(lwVector3), info->vertex_num, fp);
+            if(!lwReadArray(fp, info->normal_seq, info->vertex_num)) return LW_RET_FAILED;
         }
 
-        if(info->fvf & D3DFVF_TEX1)
+        if(lwTextureCoordinateCount(info->fvf) == 1)
         {
-            info->texcoord0_seq = LW_NEW(lwVector2[info->vertex_num]);
-            fread(&info->texcoord0_seq[0], sizeof(lwVector2), info->vertex_num, fp);
+            if(!lwReadArray(fp, info->texcoord0_seq, info->vertex_num)) return LW_RET_FAILED;
 
 			//// added by clp
 			//info->texcoord1_seq = LW_NEW(lwVector2[info->vertex_num]);
@@ -1595,63 +1633,63 @@ LW_RESULT lwMeshInfo_Load(lwMeshInfo* info, FILE* fp, DWORD version)
 			//info->fvf |= D3DFVF_TEX2;
 			//info->fvf ^= D3DFVF_TEX1;
         }
-        else if(info->fvf & D3DFVF_TEX2)
+        else if(lwTextureCoordinateCount(info->fvf) == 2)
         {
-            info->texcoord0_seq = LW_NEW(lwVector2[info->vertex_num]);
-            info->texcoord1_seq = LW_NEW(lwVector2[info->vertex_num]);
-            fread(&info->texcoord0_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-            fread(&info->texcoord1_seq[0], sizeof(lwVector2), info->vertex_num, fp);
+
+
+            if(!lwReadArray(fp, info->texcoord0_seq, info->vertex_num)) return LW_RET_FAILED;
+            if(!lwReadArray(fp, info->texcoord1_seq, info->vertex_num)) return LW_RET_FAILED;
         }
-        else if(info->fvf & D3DFVF_TEX3)
+        else if(lwTextureCoordinateCount(info->fvf) == 3)
         {
-            info->texcoord0_seq = LW_NEW(lwVector2[info->vertex_num]);
-            info->texcoord1_seq = LW_NEW(lwVector2[info->vertex_num]);
-            info->texcoord2_seq = LW_NEW(lwVector2[info->vertex_num]);
-            fread(&info->texcoord0_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-            fread(&info->texcoord1_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-            fread(&info->texcoord2_seq[0], sizeof(lwVector2), info->vertex_num, fp);
+
+
+
+            if(!lwReadArray(fp, info->texcoord0_seq, info->vertex_num)) return LW_RET_FAILED;
+            if(!lwReadArray(fp, info->texcoord1_seq, info->vertex_num)) return LW_RET_FAILED;
+            if(!lwReadArray(fp, info->texcoord2_seq, info->vertex_num)) return LW_RET_FAILED;
         }
-        else if(info->fvf & D3DFVF_TEX4)
+        else if(lwTextureCoordinateCount(info->fvf) == 4)
         {
-            info->texcoord0_seq = LW_NEW(lwVector2[info->vertex_num]);
-            info->texcoord1_seq = LW_NEW(lwVector2[info->vertex_num]);
-            info->texcoord2_seq = LW_NEW(lwVector2[info->vertex_num]);
-            info->texcoord3_seq = LW_NEW(lwVector2[info->vertex_num]);
-            fread(&info->texcoord0_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-            fread(&info->texcoord1_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-            fread(&info->texcoord2_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-            fread(&info->texcoord3_seq[0], sizeof(lwVector2), info->vertex_num, fp);
+
+
+
+
+            if(!lwReadArray(fp, info->texcoord0_seq, info->vertex_num)) return LW_RET_FAILED;
+            if(!lwReadArray(fp, info->texcoord1_seq, info->vertex_num)) return LW_RET_FAILED;
+            if(!lwReadArray(fp, info->texcoord2_seq, info->vertex_num)) return LW_RET_FAILED;
+            if(!lwReadArray(fp, info->texcoord3_seq, info->vertex_num)) return LW_RET_FAILED;
         }
 
         if(info->fvf & D3DFVF_DIFFUSE)
         {
-            info->vercol_seq = LW_NEW(DWORD[info->vertex_num]);
-            fread(&info->vercol_seq[0], sizeof(DWORD), info->vertex_num, fp);
+            if(!lwReadArray(fp, info->vercol_seq, info->vertex_num)) return LW_RET_FAILED;
         }
 
         if(info->fvf & D3DFVF_LASTBETA_UBYTE4)
         {
-            info->blend_seq = LW_NEW(lwBlendInfo[info->vertex_num]);
+
             // old version use BYTE
-            BYTE* byte_index_seq = LW_NEW(BYTE[info->bone_index_num]);
+            BYTE* byte_index_seq = NULL;
 
-            fread(&info->blend_seq[0], sizeof(lwBlendInfo), info->vertex_num, fp);
-            fread(&byte_index_seq[0], sizeof(BYTE), info->bone_index_num, fp);
+            if(!lwReadArray(fp, info->blend_seq, info->vertex_num)) return LW_RET_FAILED;
+            if(!lwReadArray(fp, byte_index_seq, info->bone_index_num)) return LW_RET_FAILED;
 
-            // convert it
+            // convert it; retain ownership if the DWORD allocation throws.
+            std::unique_ptr<BYTE[]> byte_indices(byte_index_seq);
+            LW_SAFE_DELETE_A(info->bone_index_seq);
             info->bone_index_seq = LW_NEW(DWORD[info->bone_index_num]);
             for(DWORD i = 0; i < info->bone_index_num; i++)
             {
                 info->bone_index_seq[i] = byte_index_seq[i];
             }
 
-            LW_DELETE_A(byte_index_seq);
+            // byte_indices releases the temporary buffer.
         }
 
         if(info->index_num > 0)
         {
-            info->index_seq = LW_NEW(DWORD[info->index_num]);
-            fread(&info->index_seq[0], sizeof(DWORD), info->index_num, fp);
+            if(!lwReadArray(fp, info->index_seq, info->index_num)) return LW_RET_FAILED;
         }
     }
 
@@ -1661,60 +1699,60 @@ LW_RESULT lwMeshInfo_Load(lwMeshInfo* info, FILE* fp, DWORD version)
 
 LW_RESULT lwMeshInfo_Save(lwMeshInfo* info, FILE* fp)
 {
-    fwrite(&info->header, sizeof(info->header), 1, fp);
+    if(fwrite(&info->header, sizeof(info->header), 1, fp) != 1) return LW_RET_FAILED;
 
     if(info->vertex_element_num > 0)
     {
-        fwrite(&info->vertex_element_seq[0], sizeof(D3DVERTEXELEMENTX), info->vertex_element_num, fp);
+        if(!lwWriteArray(fp, info->vertex_element_seq, info->vertex_element_num)) return LW_RET_FAILED;
     }
 
-    fwrite(&info->vertex_seq[0], sizeof(lwVector3), info->vertex_num, fp);
+    if(!lwWriteArray(fp, info->vertex_seq, info->vertex_num)) return LW_RET_FAILED;
 
     if(info->fvf & D3DFVF_NORMAL)
     {
-        fwrite(&info->normal_seq[0], sizeof(lwVector3), info->vertex_num, fp);
+        if(!lwWriteArray(fp, info->normal_seq, info->vertex_num)) return LW_RET_FAILED;
     }
 
-    if(info->fvf & D3DFVF_TEX1)
+    if(lwTextureCoordinateCount(info->fvf) == 1)
     {
-        fwrite(&info->texcoord0_seq[0], sizeof(lwVector2), info->vertex_num, fp);
+        if(!lwWriteArray(fp, info->texcoord0_seq, info->vertex_num)) return LW_RET_FAILED;
     }
-    else if(info->fvf & D3DFVF_TEX2)
+    else if(lwTextureCoordinateCount(info->fvf) == 2)
     {
-        fwrite(&info->texcoord0_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-        fwrite(&info->texcoord1_seq[0], sizeof(lwVector2), info->vertex_num, fp);
+        if(!lwWriteArray(fp, info->texcoord0_seq, info->vertex_num)) return LW_RET_FAILED;
+        if(!lwWriteArray(fp, info->texcoord1_seq, info->vertex_num)) return LW_RET_FAILED;
     }
-    else if(info->fvf & D3DFVF_TEX3)
+    else if(lwTextureCoordinateCount(info->fvf) == 3)
     {
-        fwrite(&info->texcoord0_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-        fwrite(&info->texcoord1_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-        fwrite(&info->texcoord2_seq[0], sizeof(lwVector2), info->vertex_num, fp);
+        if(!lwWriteArray(fp, info->texcoord0_seq, info->vertex_num)) return LW_RET_FAILED;
+        if(!lwWriteArray(fp, info->texcoord1_seq, info->vertex_num)) return LW_RET_FAILED;
+        if(!lwWriteArray(fp, info->texcoord2_seq, info->vertex_num)) return LW_RET_FAILED;
     }
-    else if(info->fvf & D3DFVF_TEX4)
+    else if(lwTextureCoordinateCount(info->fvf) == 4)
     {
-        fwrite(&info->texcoord0_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-        fwrite(&info->texcoord1_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-        fwrite(&info->texcoord2_seq[0], sizeof(lwVector2), info->vertex_num, fp);
-        fwrite(&info->texcoord3_seq[0], sizeof(lwVector2), info->vertex_num, fp);
+        if(!lwWriteArray(fp, info->texcoord0_seq, info->vertex_num)) return LW_RET_FAILED;
+        if(!lwWriteArray(fp, info->texcoord1_seq, info->vertex_num)) return LW_RET_FAILED;
+        if(!lwWriteArray(fp, info->texcoord2_seq, info->vertex_num)) return LW_RET_FAILED;
+        if(!lwWriteArray(fp, info->texcoord3_seq, info->vertex_num)) return LW_RET_FAILED;
     }
 
     if(info->fvf & D3DFVF_DIFFUSE)
     {
-        fwrite(&info->vercol_seq[0], sizeof(DWORD), info->vertex_num, fp);
+        if(!lwWriteArray(fp, info->vercol_seq, info->vertex_num)) return LW_RET_FAILED;
     }
 
     if(info->bone_index_num > 0)
     {
-        fwrite(&info->blend_seq[0], sizeof(lwBlendInfo), info->vertex_num, fp);
-        fwrite(&info->bone_index_seq[0], sizeof(DWORD), info->bone_index_num, fp);
+        if(!lwWriteArray(fp, info->blend_seq, info->vertex_num)) return LW_RET_FAILED;
+        if(!lwWriteArray(fp, info->bone_index_seq, info->bone_index_num)) return LW_RET_FAILED;
     }
 
     if(info->index_num > 0)
     {
-        fwrite(&info->index_seq[0], sizeof(DWORD), info->index_num, fp);
+        if(!lwWriteArray(fp, info->index_seq, info->index_num)) return LW_RET_FAILED;
     }
 
-    fwrite(&info->subset_seq[0], sizeof(lwSubsetInfo), info->subset_num, fp);
+    if(!lwWriteArray(fp, info->subset_seq, info->subset_num)) return LW_RET_FAILED;
 
     return LW_RET_OK;
 
@@ -1737,19 +1775,19 @@ DWORD lwMeshInfo_GetDataSize(lwMeshInfo* info)
         size += sizeof(lwVector3) * info->vertex_num;
     }
 
-    if(info->fvf & D3DFVF_TEX1)
+    if(lwTextureCoordinateCount(info->fvf) == 1)
     {
         size += sizeof(lwVector2) * info->vertex_num;
     }
-    else if(info->fvf & D3DFVF_TEX2)
+    else if(lwTextureCoordinateCount(info->fvf) == 2)
     {
         size += sizeof(lwVector2) * info->vertex_num * 2;
     }
-    else if(info->fvf & D3DFVF_TEX3)
+    else if(lwTextureCoordinateCount(info->fvf) == 3)
     {
         size += sizeof(lwVector2) * info->vertex_num * 3;
     }
-    else if(info->fvf & D3DFVF_TEX4)
+    else if(lwTextureCoordinateCount(info->fvf) == 4)
     {
         size += sizeof(lwVector2) * info->vertex_num * 4;
     }
@@ -1759,7 +1797,7 @@ DWORD lwMeshInfo_GetDataSize(lwMeshInfo* info)
         size += sizeof(DWORD) * info->vertex_num;
     }
 
-    if(info->fvf & D3DFVF_LASTBETA_UBYTE4)
+    if(info->bone_index_num > 0)
     {
         size += sizeof(lwBlendInfo) * info->vertex_num;
         size += sizeof(DWORD) * info->bone_index_num;
@@ -2378,39 +2416,54 @@ LW_RESULT lwHelperMeshInfo::Copy(const lwHelperMeshInfo* src)
 // lwHelperInfo
 LW_STD_IMPLEMENTATION(lwHelperInfo)
 
+void lwHelperInfo::Swap(lwHelperInfo& other)
+{
+    std::swap(type, other.type);
+    std::swap(dummy_seq, other.dummy_seq);
+    std::swap(box_seq, other.box_seq);
+    std::swap(mesh_seq, other.mesh_seq);
+    std::swap(bbox_seq, other.bbox_seq);
+    std::swap(bsphere_seq, other.bsphere_seq);
+    std::swap(dummy_num, other.dummy_num);
+    std::swap(box_num, other.box_num);
+    std::swap(mesh_num, other.mesh_num);
+    std::swap(bbox_num, other.bbox_num);
+    std::swap(bsphere_num, other.bsphere_num);
+}
+
 LW_RESULT lwHelperInfo::Load(FILE* fp, DWORD version)
 {
     if(version == EXP_OBJ_VERSION_0_0_0_0)
     {
         DWORD old_version;
-        fread(&old_version, sizeof(old_version), 1, fp);
+        if(fread(&old_version, sizeof(old_version), 1, fp) != 1) return LW_RET_FAILED;
     }
 
-    fread(&type, sizeof(type), 1, fp);
+    if(fread(&type, sizeof(type), 1, fp) != 1) return LW_RET_FAILED;
 
     if(type & HELPER_TYPE_DUMMY)
     {
-        _LoadHelperDummyInfo(fp, version);
+        if(LW_FAILED(_LoadHelperDummyInfo(fp, version))) return LW_RET_FAILED;
     }
 
     if(type & HELPER_TYPE_BOX)
     {
-        _LoadHelperBoxInfo(fp, version);
+        if(LW_FAILED(_LoadHelperBoxInfo(fp, version))) return LW_RET_FAILED;
     }
 
     if(type & HELPER_TYPE_MESH)
     {
-        _LoadHelperMeshInfo(fp, version);
+        if(LW_FAILED(_LoadHelperMeshInfo(fp, version))) return LW_RET_FAILED;
     }
 
     if(type & HELPER_TYPE_BOUNDINGBOX)
     {
-        _LoadBoundingBoxInfo(fp, version);
+        if(LW_FAILED(_LoadBoundingBoxInfo(fp, version))) return LW_RET_FAILED;
     }
 
     if(type & HELPER_TYPE_BOUNDINGSPHERE)
     { 
-        _LoadBoundingSphereInfo(fp, version);
+        if(LW_FAILED(_LoadBoundingSphereInfo(fp, version))) return LW_RET_FAILED;
     }
 
     return LW_RET_OK;
@@ -2420,31 +2473,31 @@ LW_RESULT lwHelperInfo::Save(FILE* fp) const
 {
     //fwrite(&VERSION, sizeof(VERSION), 1, fp);
 
-    fwrite(&type, sizeof(type), 1, fp);
+    if(fwrite(&type, sizeof(type), 1, fp) != 1) return LW_RET_FAILED;
 
     if(type & HELPER_TYPE_DUMMY)
     {
-        _SaveHelperDummyInfo(fp);
+        if(LW_FAILED(_SaveHelperDummyInfo(fp))) return LW_RET_FAILED;
     }
 
     if(type & HELPER_TYPE_BOX)
     {
-        _SaveHelperBoxInfo(fp);
+        if(LW_FAILED(_SaveHelperBoxInfo(fp))) return LW_RET_FAILED;
     }
 
     if(type & HELPER_TYPE_MESH)
     {
-        _SaveHelperMeshInfo(fp);
+        if(LW_FAILED(_SaveHelperMeshInfo(fp))) return LW_RET_FAILED;
     }
 
     if(type & HELPER_TYPE_BOUNDINGBOX)
     {
-        _SaveBoundingBoxInfo(fp);
+        if(LW_FAILED(_SaveBoundingBoxInfo(fp))) return LW_RET_FAILED;
     }
 
     if(type & HELPER_TYPE_BOUNDINGSPHERE)
     { 
-        _SaveBoundingSphereInfo(fp);
+        if(LW_FAILED(_SaveBoundingSphereInfo(fp))) return LW_RET_FAILED;
     }
 
     return LW_RET_OK;
@@ -2550,42 +2603,42 @@ LW_RESULT lwHelperInfo::_LoadHelperDummyInfo(FILE* fp, DWORD version)
 
     if(version >= EXP_OBJ_VERSION_1_0_0_1)
     {
-        fread(&dummy_num, sizeof(dummy_num), 1, fp);
-        dummy_seq = LW_NEW(lwHelperDummyInfo[dummy_num]);
-        fread(&dummy_seq[0], sizeof(lwHelperDummyInfo), dummy_num, fp);
+        if(fread(&dummy_num, sizeof(dummy_num), 1, fp) != 1) return LW_RET_FAILED;
+        if(!lwReadArray(fp, dummy_seq, dummy_num)) return LW_RET_FAILED;
     }
     else if(version <= EXP_OBJ_VERSION_1_0_0_0)
     {
-        fread(&dummy_num, sizeof(dummy_num), 1, fp);
-        lwHelperDummyInfo_1000* old_s = LW_NEW(lwHelperDummyInfo_1000[dummy_num]);
-        fread(&old_s[0], sizeof(lwHelperDummyInfo_1000), dummy_num, fp);
+        if(fread(&dummy_num, sizeof(dummy_num), 1, fp) != 1) return LW_RET_FAILED;
+        lwHelperDummyInfo_1000* old_s = NULL;
+        if(!lwReadArray(fp, old_s, dummy_num)) return LW_RET_FAILED;
+        std::unique_ptr<lwHelperDummyInfo_1000[]> old_records(old_s);
 
         dummy_seq = LW_NEW(lwHelperDummyInfo[dummy_num]);
         for(DWORD i = 0; i < dummy_num; i++)
         {
             dummy_seq[i].id = old_s[i].id;
             dummy_seq[i].mat = old_s[i].mat;
+            dummy_seq[i].mat_local = old_s[i].mat;
             dummy_seq[i].parent_type = 0;
             dummy_seq[i].parent_id = 0;
         }
 
-        LW_DELETE_A(old_s);
+        // old_records owns the conversion buffer.
     }
 
     return LW_RET_OK;
 }
 LW_RESULT lwHelperInfo::_LoadHelperBoxInfo(FILE* fp, DWORD version)
 {
-    fread(&box_num, sizeof(box_num), 1, fp);
+    if(fread(&box_num, sizeof(box_num), 1, fp) != 1) return LW_RET_FAILED;
 
-    box_seq = LW_NEW(lwHelperBoxInfo[box_num]);
-    fread(&box_seq[0], sizeof(lwHelperBoxInfo), box_num, fp);
+    if(!lwReadArray(fp, box_seq, box_num)) return LW_RET_FAILED;
 
     if(version <= EXP_OBJ_VERSION_1_0_0_1)
     {
         lwBox* b;
         lwBox_1001 old_b;
-        for(DWORD i = 0; i < bbox_num; i++)
+        for(DWORD i = 0; i < box_num; i++)
         {
             b = &box_seq[i].box;
             old_b.p = b->c;
@@ -2600,8 +2653,11 @@ LW_RESULT lwHelperInfo::_LoadHelperBoxInfo(FILE* fp, DWORD version)
 }
 LW_RESULT lwHelperInfo::_LoadHelperMeshInfo(FILE* fp, DWORD version)
 {
-    fread(&mesh_num, sizeof(mesh_num), 1, fp);
+    if(fread(&mesh_num, sizeof(mesh_num), 1, fp) != 1) return LW_RET_FAILED;
 
+    const int64_t remaining = lwFileRemaining(fp);
+    const size_t record_minimum = 6 * sizeof(DWORD) + LW_CHAR_32 + sizeof(lwMatrix44) + sizeof(lwBox);
+    if(remaining < 0 || mesh_num > static_cast<uint64_t>(remaining) / record_minimum) return LW_RET_FAILED;
     mesh_seq = LW_NEW(lwHelperMeshInfo[mesh_num]);
 
     lwHelperMeshInfo* info;
@@ -2610,21 +2666,19 @@ LW_RESULT lwHelperInfo::_LoadHelperMeshInfo(FILE* fp, DWORD version)
     {
         info = &mesh_seq[i];
 
-        fread(&info->id, sizeof(info->id), 1, fp);
-        fread(&info->type, sizeof(info->type), 1, fp);
-        fread(&info->sub_type, sizeof(info->sub_type), 1, fp);
-        fread(&info->name[0], sizeof(info->name), 1, fp);
-        fread(&info->state, sizeof(info->state), 1, fp);
-        fread(&info->mat, sizeof(info->mat), 1, fp);
-        fread(&info->box, sizeof(info->box), 1, fp);
-        fread(&info->vertex_num, sizeof(info->vertex_num), 1, fp);
-        fread(&info->face_num, sizeof(info->face_num), 1, fp);
+        if(fread(&info->id, sizeof(info->id), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->type, sizeof(info->type), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->sub_type, sizeof(info->sub_type), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->name[0], sizeof(info->name), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->state, sizeof(info->state), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->mat, sizeof(info->mat), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->box, sizeof(info->box), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->vertex_num, sizeof(info->vertex_num), 1, fp) != 1) return LW_RET_FAILED;
+        if(fread(&info->face_num, sizeof(info->face_num), 1, fp) != 1) return LW_RET_FAILED;
 
-        info->vertex_seq = LW_NEW(lwVector3[info->vertex_num]);
-        info->face_seq = LW_NEW(lwHelperMeshFaceInfo[info->face_num]);
 
-        fread(&info->vertex_seq[0], sizeof(lwVector3), info->vertex_num, fp);
-        fread(&info->face_seq[0], sizeof(lwHelperMeshFaceInfo), info->face_num, fp);
+        if(!lwReadArray(fp, info->vertex_seq, info->vertex_num)) return LW_RET_FAILED;
+        if(!lwReadArray(fp, info->face_seq, info->face_num)) return LW_RET_FAILED;
     }
 
     if(version <= EXP_OBJ_VERSION_1_0_0_1)
@@ -2647,11 +2701,9 @@ LW_RESULT lwHelperInfo::_LoadHelperMeshInfo(FILE* fp, DWORD version)
 
 LW_RESULT lwHelperInfo::_LoadBoundingBoxInfo(FILE* fp, DWORD version)
 {
-    fread(&bbox_num, sizeof(DWORD), 1, fp);
+    if(fread(&bbox_num, sizeof(DWORD), 1, fp) != 1) return LW_RET_FAILED;
 
-    bbox_seq = LW_NEW(lwBoundingBoxInfo[bbox_num]);
-
-    fread(&bbox_seq[0], sizeof(lwBoundingBoxInfo), bbox_num, fp);
+    if(!lwReadArray(fp, bbox_seq, bbox_num)) return LW_RET_FAILED;
 
     if(version <= EXP_OBJ_VERSION_1_0_0_1)
     {
@@ -2673,50 +2725,48 @@ LW_RESULT lwHelperInfo::_LoadBoundingBoxInfo(FILE* fp, DWORD version)
 }
 LW_RESULT lwHelperInfo::_LoadBoundingSphereInfo(FILE* fp, DWORD version)
 {
-    fread(&bsphere_num, sizeof(DWORD), 1, fp);
+    if(fread(&bsphere_num, sizeof(DWORD), 1, fp) != 1) return LW_RET_FAILED;
 
-    bsphere_seq = LW_NEW(lwBoundingSphereInfo[bsphere_num]);
-
-    fread(&bsphere_seq[0], sizeof(lwBoundingSphereInfo), bsphere_num, fp);
+    if(!lwReadArray(fp, bsphere_seq, bsphere_num)) return LW_RET_FAILED;
 
     return LW_RET_OK;
 }
 
 LW_RESULT lwHelperInfo::_SaveHelperDummyInfo(FILE* fp) const
 {
-    fwrite(&dummy_num, sizeof(dummy_num), 1, fp);
-    fwrite(&dummy_seq[0], sizeof(lwHelperDummyInfo), dummy_num, fp);
+    if(fwrite(&dummy_num, sizeof(dummy_num), 1, fp) != 1) return LW_RET_FAILED;
+    if(!lwWriteArray(fp, dummy_seq, dummy_num)) return LW_RET_FAILED;
 
     return LW_RET_OK;
 }
 LW_RESULT lwHelperInfo::_SaveHelperBoxInfo(FILE* fp) const
 {
-    fwrite(&box_num, sizeof(box_num), 1, fp);
-    fwrite(&box_seq[0], sizeof(lwHelperBoxInfo), box_num, fp);
+    if(fwrite(&box_num, sizeof(box_num), 1, fp) != 1) return LW_RET_FAILED;
+    if(!lwWriteArray(fp, box_seq, box_num)) return LW_RET_FAILED;
 
     return LW_RET_OK;
 }
 LW_RESULT lwHelperInfo::_SaveHelperMeshInfo(FILE* fp) const
 {
-    fwrite(&mesh_num, sizeof(mesh_num), 1, fp);
+    if(fwrite(&mesh_num, sizeof(mesh_num), 1, fp) != 1) return LW_RET_FAILED;
 
     lwHelperMeshInfo* info;
     for(DWORD i = 0; i < mesh_num; i++)
     {
         info = &mesh_seq[i];
 
-        fwrite(&info->id, sizeof(info->id), 1, fp);
-        fwrite(&info->type, sizeof(info->type), 1, fp);
-        fwrite(&info->sub_type, sizeof(info->sub_type), 1, fp);
-        fwrite(&info->name[0], sizeof(info->name), 1, fp);
-        fwrite(&info->state, sizeof(info->state), 1, fp);
-        fwrite(&info->mat, sizeof(info->mat), 1, fp);
-        fwrite(&info->box, sizeof(info->box), 1, fp);
-        fwrite(&info->vertex_num, sizeof(info->vertex_num), 1, fp);
-        fwrite(&info->face_num, sizeof(info->face_num), 1, fp);
+        if(fwrite(&info->id, sizeof(info->id), 1, fp) != 1) return LW_RET_FAILED;
+        if(fwrite(&info->type, sizeof(info->type), 1, fp) != 1) return LW_RET_FAILED;
+        if(fwrite(&info->sub_type, sizeof(info->sub_type), 1, fp) != 1) return LW_RET_FAILED;
+        if(fwrite(&info->name[0], sizeof(info->name), 1, fp) != 1) return LW_RET_FAILED;
+        if(fwrite(&info->state, sizeof(info->state), 1, fp) != 1) return LW_RET_FAILED;
+        if(fwrite(&info->mat, sizeof(info->mat), 1, fp) != 1) return LW_RET_FAILED;
+        if(fwrite(&info->box, sizeof(info->box), 1, fp) != 1) return LW_RET_FAILED;
+        if(fwrite(&info->vertex_num, sizeof(info->vertex_num), 1, fp) != 1) return LW_RET_FAILED;
+        if(fwrite(&info->face_num, sizeof(info->face_num), 1, fp) != 1) return LW_RET_FAILED;
 
-        fwrite(&info->vertex_seq[0], sizeof(lwVector3), info->vertex_num, fp);
-        fwrite(&info->face_seq[0], sizeof(lwHelperMeshFaceInfo), info->face_num, fp);
+        if(!lwWriteArray(fp, info->vertex_seq, info->vertex_num)) return LW_RET_FAILED;
+        if(!lwWriteArray(fp, info->face_seq, info->face_num)) return LW_RET_FAILED;
     }
 
     return LW_RET_OK;
@@ -2724,15 +2774,15 @@ LW_RESULT lwHelperInfo::_SaveHelperMeshInfo(FILE* fp) const
 
 LW_RESULT lwHelperInfo::_SaveBoundingBoxInfo(FILE* fp) const
 {
-    fwrite(&bbox_num, sizeof(DWORD), 1, fp);
-    fwrite(&bbox_seq[0], sizeof(lwBoundingBoxInfo), bbox_num, fp);
+    if(fwrite(&bbox_num, sizeof(DWORD), 1, fp) != 1) return LW_RET_FAILED;
+    if(!lwWriteArray(fp, bbox_seq, bbox_num)) return LW_RET_FAILED;
 
     return LW_RET_OK;
 }
 LW_RESULT lwHelperInfo::_SaveBoundingSphereInfo(FILE* fp) const
 {
-    fwrite(&bsphere_num, sizeof(DWORD), 1, fp);
-    fwrite(&bsphere_seq[0], sizeof(lwBoundingSphereInfo), bsphere_num, fp);
+    if(fwrite(&bsphere_num, sizeof(DWORD), 1, fp) != 1) return LW_RET_FAILED;
+    if(!lwWriteArray(fp, bsphere_seq, bsphere_num)) return LW_RET_FAILED;
 
     return LW_RET_OK;
 }
@@ -2742,7 +2792,7 @@ LW_STD_IMPLEMENTATION(lwGeomObjInfo)
 
 LW_RESULT lwGeomObjInfo::Load(FILE* fp, DWORD version)
 {
-    fread((lwGeomObjInfoHeader*)&id, sizeof(lwGeomObjInfoHeader), 1, fp);
+    if(fread((lwGeomObjInfoHeader*)&id, sizeof(lwGeomObjInfoHeader), 1, fp) != 1) return LW_RET_FAILED;
 
     // for compatible version
     state_ctrl.SetState(STATE_FRAMECULLING, 0);
@@ -2758,25 +2808,25 @@ LW_RESULT lwGeomObjInfo::Load(FILE* fp, DWORD version)
     // read mtl data
     if(mtl_size > 0)
     {        
-        lwLoadMtlTexInfo(&mtl_seq, &mtl_num, fp, version);
+        if(LW_FAILED(lwLoadMtlTexInfo(&mtl_seq, &mtl_num, fp, version))) return LW_RET_FAILED;
     }
 
     // read mesh data
     if(mesh_size > 0)
     {
-        lwMeshInfo_Load(&mesh, fp, version);
+        if(LW_FAILED(lwMeshInfo_Load(&mesh, fp, version))) return LW_RET_FAILED;
     }
 
     // read helper datas
     if(helper_size > 0)
     {
-        helper_data.Load(fp, version);
+        if(LW_FAILED(helper_data.Load(fp, version))) return LW_RET_FAILED;
     }
 
     // read animation data
     if(anim_size > 0)
     {
-        anim_data.Load(fp, version);
+        if(LW_FAILED(anim_data.Load(fp, version))) return LW_RET_FAILED;
     }
 
 
@@ -2820,23 +2870,23 @@ LW_RESULT lwGeomObjInfo::Save(FILE* fp)
     // save mtl data
     if(mtl_size > 0)
     {        
-        lwSaveMtlTexInfo(fp, &mtl_seq[0], mtl_num);
+        if(LW_FAILED(lwSaveMtlTexInfo(fp, &mtl_seq[0], mtl_num))) return LW_RET_FAILED;
     }
 
     // save mesh data
     if(mesh_size > 0)
     {
-        lwMeshInfo_Save(&mesh, fp);
+        if(LW_FAILED(lwMeshInfo_Save(&mesh, fp))) return LW_RET_FAILED;
     }
 
     if(helper_size > 0)
     {
-        helper_data.Save(fp);
+        if(LW_FAILED(helper_data.Save(fp))) return LW_RET_FAILED;
     }
 
     if(anim_size > 0)
     {
-        anim_data.Save(fp);
+        if(LW_FAILED(anim_data.Save(fp))) return LW_RET_FAILED;
     }
 
 
@@ -2851,9 +2901,10 @@ LW_RESULT lwGeomObjInfo::Load(const char* file)
         return LW_RET_FAILED;
 
     DWORD version;
-    fread(&version, sizeof(version), 1, fp);
+    if(fread(&version, sizeof(version), 1, fp) != 1) { fclose(fp); return LW_RET_FAILED; }
 
     LW_RESULT ret = Load(fp, version);
+    if(ferror(fp) || feof(fp)) ret = LW_RET_FAILED;
 
     if(fp)
     {
@@ -2873,14 +2924,15 @@ LW_RESULT lwGeomObjInfo::Save(const char* file)
     DWORD version = EXP_OBJ_VERSION;
     fwrite(&version, sizeof(version), 1, fp);
 
-    Save(fp);
+    LW_RESULT ret = Save(fp);
+    if(ferror(fp)) ret = LW_RET_FAILED;
 
     if(fp)
     {
-        fclose(fp);
+        if(fclose(fp) != 0) ret = LW_RET_FAILED;
     }
 
-    return LW_RET_OK;
+    return ret;
 
 }
 
@@ -2905,54 +2957,51 @@ LW_STD_IMPLEMENTATION(lwModelObjInfo)
 LW_RESULT lwModelObjInfo::Load(const char* file)
 {
     FILE* fp = fopen(file, "rb");
-    if(fp == NULL)
+    if(!fp) return LW_RET_FAILED;
+    lwScopedFile guard(fp);
+    DWORD version, obj_num;
+    if(fread(&version, sizeof(version), 1, fp) != 1 ||
+       fread(&obj_num, sizeof(obj_num), 1, fp) != 1 || obj_num > LW_MAX_MODEL_OBJ_NUM)
         return LW_RET_FAILED;
-
-
-    DWORD version;
-    fread(&version, sizeof(version), 1, fp);
-
-
-    DWORD obj_num;
-    fread(&obj_num, sizeof(DWORD), 1, fp);
-
     lwModelObjInfoHeader header[LW_MAX_MODEL_OBJ_NUM];
-    fread(&header[0], sizeof(lwModelObjInfoHeader), obj_num, fp);
-
-    geom_obj_num = 0;
-
-    for(DWORD i = 0; i < obj_num; i++)
+    if(fread(header, sizeof(header[0]), obj_num, fp) != obj_num) return LW_RET_FAILED;
+    const int64_t table_end = lwFileTell(fp);
+    const int64_t remaining = lwFileRemaining(fp);
+    if(table_end < 0 || remaining < 0) return LW_RET_FAILED;
+    const uint64_t file_size = static_cast<uint64_t>(table_end + remaining);
+    lwModelObjInfo pending;
+    for(DWORD i = 0; i < obj_num; ++i)
     {
-        fseek(fp, header[i].addr, SEEK_SET);        
-
-        switch(header[i].type)
+        if(header[i].addr < static_cast<uint64_t>(table_end) || header[i].addr > file_size ||
+           header[i].size > file_size - header[i].addr || lwFileSeek(fp, header[i].addr, SEEK_SET) != 0)
+            return LW_RET_FAILED;
+        if(header[i].type == MODEL_OBJ_TYPE_GEOMETRY)
         {
-        case MODEL_OBJ_TYPE_GEOMETRY:
-            geom_obj_seq[geom_obj_num] = LW_NEW(lwGeomObjInfo());
+            if(pending.geom_obj_num >= LW_MAX_MODEL_GEOM_OBJ_NUM) return LW_RET_FAILED;
             if(version == EXP_OBJ_VERSION_0_0_0_0)
             {
                 DWORD old_version;
-                fread(&old_version, sizeof(old_version), 1, fp);
+                if(fread(&old_version, sizeof(old_version), 1, fp) != 1) return LW_RET_FAILED;
             }
-            geom_obj_seq[geom_obj_num]->Load(fp, version);
-            geom_obj_num += 1;
-            break;
-        case MODEL_OBJ_TYPE_HELPER:
-            helper_data.Load(fp, version);
-            break;
-        default:
-            assert(0);
+            std::unique_ptr<lwGeomObjInfo> object(LW_NEW(lwGeomObjInfo()));
+            if(LW_FAILED(object->Load(fp, version))) return LW_RET_FAILED;
+            pending.geom_obj_seq[pending.geom_obj_num++] = object.release();
         }
+        else if(header[i].type == MODEL_OBJ_TYPE_HELPER)
+        {
+            if(pending.helper_data.type != HELPER_TYPE_INVALID) return LW_RET_FAILED;
+            if(LW_FAILED(pending.helper_data.Load(fp, version))) return LW_RET_FAILED;
+        }
+        else return LW_RET_FAILED;
+        if(ferror(fp) || feof(fp)) return LW_RET_FAILED;
     }
-    
-
-    if(fp)
-    {
-        fclose(fp);
-    }
-
+    // Commit only after every object loads successfully; pending then frees
+    // the previous model. A failed reload leaves the visible model intact.
+    std::swap(geom_obj_num, pending.geom_obj_num);
+    for(DWORD i = 0; i < LW_MAX_MODEL_GEOM_OBJ_NUM; ++i)
+        std::swap(geom_obj_seq[i], pending.geom_obj_seq[i]);
+    helper_data.Swap(pending.helper_data);
     return LW_RET_OK;
-
 }
 LW_RESULT lwModelObjInfo::Save(const char* file)
 {
@@ -3036,7 +3085,7 @@ LW_RESULT lwModelObjInfo::Save(const char* file)
 LW_RESULT lwModelObjInfo::SortGeomObjInfoWithID()
 {
     lwGeomObjInfo* buf;
-    for(DWORD i = 0; i < geom_obj_num-1; i++)
+    for(DWORD i = 0; i + 1 < geom_obj_num; i++)
     {
         for(DWORD j = i+1; j < geom_obj_num; j++)
         {
@@ -3066,32 +3115,19 @@ DWORD lwModelObjInfo::GetDataSize()
     return size;
 }
 
-LW_RESULT lwModelObjInfo::GetHeader(lwModelObjInfoHeader* header_seq, DWORD* header_num, const char* file)
+LW_RESULT lwModelObjInfo::GetHeader(lwModelObjInfoHeader* headers, DWORD* count, const char* file)
 {
-    LW_RESULT ret = LW_RET_FAILED;
-
+    if(!headers || !count) return LW_RET_FAILED;
     FILE* fp = fopen(file, "rb");
-    if(fp == NULL)
-        goto __ret;
-
-    DWORD version;
-    fread(&version, sizeof(DWORD), 1, fp);
-
-
-    fread(header_num, sizeof(DWORD), 1, fp);
-
-    fread(&header_seq[0], sizeof(lwModelObjInfoHeader), *header_num, fp);
-
-    ret = LW_RET_OK;
-
-__ret:
-    if(fp)
-    {
-        fclose(fp);
-    }
-
-    return ret;
-
+    if(!fp) return LW_RET_FAILED;
+    lwScopedFile guard(fp);
+    DWORD version, objects;
+    if(fread(&version, sizeof(version), 1, fp) != 1 ||
+       fread(&objects, sizeof(objects), 1, fp) != 1 || objects > LW_MAX_MODEL_OBJ_NUM)
+        return LW_RET_FAILED;
+    if(fread(headers, sizeof(*headers), objects, fp) != objects) return LW_RET_FAILED;
+    *count = objects;
+    return LW_RET_OK;
 }
 
 // lwHelperDummyObjInfo

@@ -309,7 +309,7 @@ void MPMap::FullLoading()
         if(*(_pOffsetIdx + i)!=0)
         {
             MPActiveMapSection *pSection = LoadSectionData(nSectionX, nSectionY);
-            _pfnProc(0, pSection->nX, pSection->nY, (DWORD)(pSection), this);
+            _pfnProc(0, pSection->nX, pSection->nY, reinterpret_cast<ULONG_PTR>(pSection), this);
         }
     }
 }
@@ -397,7 +397,7 @@ void MPMap::DynamicLoading(DWORD dwTimeParam)
 			{
 				_SaveSection(DelSectionList[i]);
 			}
-		    if(_pfnProc)	_pfnProc(1, DelSectionList[i]->nX, DelSectionList[i]->nY, (DWORD)(DelSectionList[i]),this);
+		    if(_pfnProc)	_pfnProc(1, DelSectionList[i]->nX, DelSectionList[i]->nY, reinterpret_cast<ULONG_PTR>(DelSectionList[i]),this);
 			_ActiveSectionArray[DelSectionList[i]->nY][DelSectionList[i]->nX] = NULL;
         	SAFE_DELETE(DelSectionList[i]->pTileData);
 			SAFE_DELETE(DelSectionList[i]);
@@ -409,7 +409,7 @@ void MPMap::DynamicLoading(DWORD dwTimeParam)
     for(list<MPActiveMapSection*>::iterator it = _NewList.begin(); it!=_NewList.end(); it++)
 	{
         MPActiveMapSection *pNewSection = (*it); 
-        if(_pfnProc) _pfnProc(0, pNewSection->nX, pNewSection->nY, (DWORD)(pNewSection),this);
+        if(_pfnProc) _pfnProc(0, pNewSection->nX, pNewSection->nY, reinterpret_cast<ULONG_PTR>(pNewSection),this);
 	    UpdateRender(TRUE);
     }
 
@@ -447,7 +447,7 @@ void MPMap::ClearAllSection(BOOL bSaveFlag)
 		}
 	    if(bSaveFlag)
         {
-            if(_pfnProc) _pfnProc(1, pSection->nX, pSection->nY, (DWORD)(pSection),this);
+            if(_pfnProc) _pfnProc(1, pSection->nX, pSection->nY, reinterpret_cast<ULONG_PTR>(pSection),this);
         }
         _ActiveSectionArray[pSection->nY][pSection->nX] = NULL;
     	SAFE_DELETE(pSection->pTileData);

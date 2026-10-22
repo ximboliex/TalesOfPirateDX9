@@ -384,7 +384,7 @@ bool CEdit::OnChar( char c )
 	case '@':{
 		DWORD dwThreadID = GetCurrentThreadId();
 		HKL hCurKeyboard = GetKeyboardLayout(dwThreadID);
-		unsigned int keyboard = reinterpret_cast<int> (hCurKeyboard);
+		ULONG_PTR keyboard = reinterpret_cast<ULONG_PTR>(hCurKeyboard);
 		unsigned int layout = keyboard>>16;
 		unsigned int lang = keyboard&0xFFFF;
 		if(layout == 0x0407 || layout == 0xf012 ){

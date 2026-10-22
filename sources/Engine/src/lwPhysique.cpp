@@ -718,7 +718,7 @@ LW_RESULT lwPhysique::Update()
             if(pri_ctrl == 0)
             {
                 LG_MSGBOX("crash!!!, call jack");
-                __asm int 3;
+                DebugBreak();
             }
 
             if(LW_FAILED(ctrl_obj->UpdateObject(pri_ctrl, pri->GetMeshAgent()->GetMesh())))

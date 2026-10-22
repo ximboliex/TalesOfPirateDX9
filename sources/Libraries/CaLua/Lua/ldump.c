@@ -11,6 +11,7 @@
 #include "lua.h"
 
 #include "lobject.h"
+#include "ldebug.h"
 #include "lopcodes.h"
 #include "lstate.h"
 #include "lundump.h"
@@ -44,7 +45,10 @@ static void DumpInt(int x, DumpState* D)
 
 static void DumpSize(size_t x, DumpState* D)
 {
- DumpBlock(&x,sizeof(x),D);
+ uint32_t wireSize;
+ if (x > UINT32_MAX) luaG_runerror(D->L, "Lua chunk string exceeds the legacy 32-bit format");
+ wireSize = (uint32_t)x;
+ DumpBlock(&wireSize, sizeof(wireSize), D);
 }
 
 static void DumpNumber(lua_Number x, DumpState* D)
@@ -145,7 +149,7 @@ static void DumpHeader(DumpState* D)
  DumpByte(VERSION,D);
  DumpByte(luaU_endianness(),D);
  DumpByte(sizeof(int),D);
- DumpByte(sizeof(size_t),D);
+ DumpByte(sizeof(uint32_t),D);
  DumpByte(sizeof(Instruction),D);
  DumpByte(SIZE_OP,D);
  DumpByte(SIZE_A,D);

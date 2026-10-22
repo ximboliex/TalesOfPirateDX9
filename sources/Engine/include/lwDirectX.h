@@ -1,8 +1,17 @@
 //
 #pragma once
 
-#if(!defined USE_DX_VERSION)
-#define LW_USE_DX8
+#if defined(LW_USE_DX8)
+#error Mindpower now requires Direct3D 9. Remove LW_USE_DX8 from the build.
+#endif
+#ifndef LW_USE_DX9
+#define LW_USE_DX9
+#endif
+#ifndef USE_DX_VERSION
+#define USE_DX_VERSION
+#endif
+#ifndef DIRECTINPUT_VERSION
+#define DIRECTINPUT_VERSION 0x0800
 #endif
 
 //#define DELAY_LOAD_DXDLL

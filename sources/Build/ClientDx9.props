@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Dx9SourceRoot>$(MSBuildThisFileDirectory)..\</Dx9SourceRoot>
+    <Dx9SdkInclude Condition="'$(DXSDK_DIR)'!=''">$(DXSDK_DIR)Include\</Dx9SdkInclude>
+    <Dx9SdkInclude Condition="'$(Dx9SdkInclude)'==''">$(Dx9SourceRoot)Libraries\DirectX\DX9\Include\</Dx9SdkInclude>
+    <Dx9SdkLibrary Condition="'$(Platform)'=='Win32'">$(DXSDK_DIR)Lib\x86\</Dx9SdkLibrary>
+    <Dx9SdkLibrary Condition="'$(Platform)'=='x64'">$(ClientD3DXLibraryDir)</Dx9SdkLibrary>
+    <Dx9SdkInclude Condition="'$(Platform)'=='x64'">$(ClientD3DXIncludeDir)</Dx9SdkInclude>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(Dx9SdkInclude);$(Dx9SourceRoot)Engine\include;$(Dx9SourceRoot)Engine\src;$(Dx9SourceRoot)Libraries\Status\Include;$(Dx9SourceRoot)Libraries\AudioSDL\inc;$(Dx9SourceRoot)Libraries\SDL-1.2.7\INCLUDE;$(Dx9SourceRoot)Libraries\Discord\Include;$(Dx9SourceRoot)Libraries\Cryptopp;$(Dx9SourceRoot)Libraries\CaLua\include;$(Dx9SourceRoot)Libraries\Util\include;$(Dx9SourceRoot)Libraries\common\include;$(Dx9SourceRoot)Libraries\Server\sdk\include;$(Dx9SourceRoot)Libraries\EncLib\include;$(Dx9SourceRoot)Libraries\ICUHelper\inc;$(Dx9SourceRoot)Libraries\icu\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>USE_DX_VERSION;LW_USE_DX9;DIRECT3D_VERSION=0x0900;DIRECTINPUT_VERSION=0x0800;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <UndefinePreprocessorDefinitions>LW_USE_DX8;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(Dx9SdkLibrary);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d9.lib;d3dx9.lib;dinput8.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs></DelayLoadDLLs>
+    </Link>
+  </ItemDefinitionGroup>
+  <Target Name="CheckClientDx9Sdk" BeforeTargets="PrepareForBuild" Condition="'$(Platform)'=='x64'">
+    <Error Condition="!Exists('$(Dx9SdkInclude)d3dx9.h')" Text="Missing DX9 headers. Set ClientD3DXIncludeDir or install the June 2010 DirectX SDK (DXSDK_DIR)." />
+    <Error Condition="!Exists('$(ClientD3DXLibraryDir)d3dx9.lib')" Text="Missing x64 d3dx9.lib. Set ClientD3DXLibraryDir to an x64 SDK library directory." />
+  </Target>
+</Project>

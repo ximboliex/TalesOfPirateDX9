@@ -10,6 +10,7 @@
 
 #include <limits.h>
 #include <stddef.h>
+#include <stdint.h>
 
 
 #include "lua.h"
@@ -47,9 +48,9 @@ typedef int ls_hash;
 
 /* an unsigned integer big enough to count the total memory used by Lua; */
 /* it should be at least as large as size_t */
-typedef unsigned long lu_mem;
+typedef size_t lu_mem;
 
-#define MAX_LUMEM	ULONG_MAX
+#define MAX_LUMEM	((lu_mem)~(lu_mem)0)
 
 
 /* an integer big enough to count the number of strings in use */
@@ -69,7 +70,7 @@ typedef unsigned char lu_byte;
 ** this is for hashing only; there is no problem if the integer
 ** cannot hold the whole pointer value
 */
-#define IntPoint(p)  ((lu_hash)(p))
+#define IntPoint(p)  ((lu_hash)(uintptr_t)(p))
 
 
 
@@ -114,7 +115,7 @@ typedef LUA_UACNUMBER l_uacNumber;
 ** type for virtual-machine instructions
 ** must be an unsigned with (at least) 4 bytes (see details in lopcodes.h)
 */
-typedef unsigned long Instruction;
+typedef uint32_t Instruction;
 
 
 /* maximum depth for calls (unsigned short) */

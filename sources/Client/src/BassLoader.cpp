@@ -7,7 +7,7 @@ static long gBassLoadCount = 0;
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-static void CheckBassFunction(unsigned int theFunc, const char *theName)
+static void CheckBassFunction(FARPROC theFunc, const char *theName)
 {
 	if (theFunc==0)
 	{
@@ -20,21 +20,29 @@ static void CheckBassFunction(unsigned int theFunc, const char *theName)
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+template<class Function>
+static Function RequiredBassFunction(HMODULE module, const char* name)
+{
+    FARPROC address = GetProcAddress(module, name);
+    CheckBassFunction(address, name);
+    return reinterpret_cast<Function>(address);
+}
+
 BASS_INSTANCE::BASS_INSTANCE(const char *dllName)
 {
 	mModule = LoadLibrary(dllName);
 	if (!mModule)
 		return;
 
-#define GETPROC(_x) CheckBassFunction(*((unsigned int *)&_x) = (unsigned int)GetProcAddress(mModule, #_x),#_x)    
+#define GETPROC(name) name = RequiredBassFunction<decltype(name)>(mModule, #name)
 
 	GETPROC(BASS_Init);
 	GETPROC(BASS_Free);
 	GETPROC(BASS_Stop);
 	GETPROC(BASS_Start);
 
-	*((unsigned int*) &BASS_SetGlobalVolumes) = (unsigned int) GetProcAddress(mModule, "BASS_SetGlobalVolumes");
-	*((unsigned int*) &BASS_SetVolume) = (unsigned int) GetProcAddress(mModule, "BASS_SetVolume");
+	BASS_SetGlobalVolumes = reinterpret_cast<decltype(BASS_SetGlobalVolumes)>(GetProcAddress(mModule, "BASS_SetGlobalVolumes"));
+	BASS_SetVolume = reinterpret_cast<decltype(BASS_SetVolume)>(GetProcAddress(mModule, "BASS_SetVolume"));
 
 	if ((BASS_SetVolume == NULL) && (BASS_SetGlobalVolumes == NULL))
 	{
@@ -42,7 +50,7 @@ BASS_INSTANCE::BASS_INSTANCE(const char *dllName)
 		exit(0);
 	}	
 
-	*((unsigned int*) &BASS_SetConfig) = (unsigned int) GetProcAddress(mModule, "BASS_SetConfig");
+	BASS_SetConfig = reinterpret_cast<decltype(BASS_SetConfig)>(GetProcAddress(mModule, "BASS_SetConfig"));
 
 	GETPROC(BASS_MusicSetAmplify);
 	GETPROC(BASS_ChannelStop);
@@ -65,10 +73,10 @@ BASS_INSTANCE::BASS_INSTANCE(const char *dllName)
 	if (mVersion2)
 	{
 		// Version 2 has different BASS_Init params
-		*((unsigned int*) &BASS_Init2) = (unsigned int) BASS_Init;
+		BASS_Init2 = reinterpret_cast<decltype(BASS_Init2)>(BASS_Init);
 		BASS_Init = NULL;
 
-		*((unsigned int*) &BASS_MusicLoad2) = (unsigned int) BASS_MusicLoad;
+		BASS_MusicLoad2 = reinterpret_cast<decltype(BASS_MusicLoad2)>(BASS_MusicLoad);
 		BASS_MusicLoad = NULL;
 	}
 

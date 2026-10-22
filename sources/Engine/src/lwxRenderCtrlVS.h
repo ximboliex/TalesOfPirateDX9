@@ -49,6 +49,7 @@ private:
 
 public:
 	lwxRenderCtrlVSVertexBlend_dx8();
+    ~lwxRenderCtrlVSVertexBlend_dx8() { LW_SAFE_RELEASE(mPixelShader); }
     DWORD GetType() { return RENDERCTRL_VS_VERTEXBLEND; }
     LW_RESULT Clone(lwIRenderCtrlVS** obj);
     LW_RESULT Initialize(lwIRenderCtrlAgent* agent);
@@ -62,7 +63,7 @@ private:
 	// added by clp
 	std::string mPixelShaderName;
 	bool mPixelShaderReload;
-	DWORD mPixelShader;
+	IDirect3DPixelShaderX* mPixelShader;
 public:
 	void setPixelShader( const std::string& filename )
 	{

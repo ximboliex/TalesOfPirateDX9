@@ -11,8 +11,8 @@ call :MKLINK "%cd%\..\server\GameServer\GameServer.pdb" "%cd%\Server\GameServer\
 :: Client Release
 call :MKLINK "%cd%\..\client\system\Game.exe" "%cd%\Client\bin\system\Game.exe"
 call :MKLINK "%cd%\..\client\system\Game.pdb" "%cd%\Client\bin\system\Game.pdb"
-call :MKLINK "%cd%\..\client\system\MindPower3D_D8R.dll" "%cd%\Engine\lib\MindPower3D_D8R.dll"
-call :MKLINK "%cd%\..\client\system\MindPower3D_D8R.pdb" "%cd%\Engine\lib\MindPower3D_D8R.pdb"
+call :MKLINK "%cd%\..\client\system\MindPower3D_D9R.dll" "%cd%\Engine\lib\MindPower3D_D9R.dll"
+call :MKLINK "%cd%\..\client\system\MindPower3D_D9R.pdb" "%cd%\Engine\lib\MindPower3D_D9R.pdb"
 
 pause
 

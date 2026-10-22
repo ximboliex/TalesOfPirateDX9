@@ -181,7 +181,7 @@ union GCObject {
 #define gcotop(o)	check_exp((o)->gch.tt == LUA_TPROTO, &((o)->p))
 #define gcotouv(o)	check_exp((o)->gch.tt == LUA_TUPVAL, &((o)->uv))
 #define ngcotouv(o) \
-	check_exp((o) == NULL || (o)->gch.tt == LUA_TUPVAL, &((o)->uv))
+	check_exp((o) == NULL || (o)->gch.tt == LUA_TUPVAL, ((o) == NULL ? NULL : &((o)->uv)))
 #define gcototh(o)	check_exp((o)->gch.tt == LUA_TTHREAD, &((o)->th))
 
 /* macro to convert any value into a GCObject */
